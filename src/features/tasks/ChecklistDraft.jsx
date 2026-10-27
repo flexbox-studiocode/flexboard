@@ -1,41 +1,59 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button, IconButton, Input } from '../../components/ui/index.js'
 
 // Only user-entered form state. No task, progress, or completion is simulated.
-export default function ChecklistDraft({ disabled = false }) {
+export default function ChecklistDraft({ items = [], onChange, disabled = false }) {
   const descriptionId = useId()
-  const [items, setItems] = useState([])
-  const [nextId, setNextId] = useState(1)
+  const nextId = useRef(1)
   const fieldset = useRef(null)
   const pendingFocus = useRef(null)
+  const readOnly = disabled || typeof onChange !== 'function'
 
   useLayoutEffect(() => {
-    if (pendingFocus.current === null) return
-    const selector = pendingFocus.current === 'add'
-      ? '[data-add-checklist]'
-      : `[data-checklist-id="${pendingFocus.current}"] input`
-    fieldset.current?.querySelector(selector)?.focus()
+    const pending = pendingFocus.current
     pendingFocus.current = null
-  }, [items])
+    // Focus only an accepted request, never a later unrelated parent update.
+    if (!pending || readOnly) return
+    const accepted = items.length === pending.items.length && items.every((item, index) => (
+      item.id === pending.items[index].id && item.title === pending.items[index].title
+    ))
+    if (!accepted) return
+    const triggerStillFocused = document.activeElement === pending.trigger
+    const removedTriggerLostFocus = !pending.trigger?.isConnected && document.activeElement === document.body
+    if (!triggerStillFocused && !removedTriggerLostFocus) return
+    const selector = pending.id === null
+      ? '[data-add-checklist]'
+      : `[data-checklist-id="${pending.id}"] input`
+    fieldset.current?.querySelector(selector)?.focus()
+  })
+
+  function requestChange(nextItems, focusId) {
+    pendingFocus.current = { items: nextItems, id: focusId, trigger: document.activeElement }
+    onChange(nextItems)
+  }
 
   function addItem() {
-    pendingFocus.current = nextId
-    setItems(previous => [...previous, { id: nextId, title: '' }])
-    setNextId(previous => previous + 1)
+    if (readOnly) return
+    // IDs are local UI identities, not persisted task/checklist IDs.
+    const id = `${descriptionId}-${nextId.current++}`
+    requestChange([...items, { id, title: '' }], id)
   }
 
   function removeItem(id) {
+    if (readOnly) return
     const index = items.findIndex(item => item.id === id)
-    pendingFocus.current = items[index + 1]?.id ?? items[index - 1]?.id ?? 'add'
-    setItems(previous => previous.filter(item => item.id !== id))
+    if (index === -1) return
+    requestChange(items.filter(item => item.id !== id), items[index + 1]?.id ?? items[index - 1]?.id ?? null)
   }
 
   function updateItem(id, title) {
-    setItems(previous => previous.map(item => item.id === id ? { ...item, title } : item))
+    if (readOnly) return
+    pendingFocus.current = null
+    onChange(items.map(item => item.id === id ? { ...item, title } : item))
   }
 
-  return <fieldset ref={fieldset} className="checklist-draft" disabled={disabled} aria-describedby={descriptionId}>
+  return <fieldset ref={fieldset} className="checklist-draft" disabled={readOnly} aria-describedby={descriptionId}>
     <legend>Rancangan checklist</legend>
     <p id={descriptionId} className="muted">Susun item pekerjaan secara lokal. Item belum dibuat di server, tidak dapat ditandai selesai, dan tidak menghasilkan progres.</p>
     <div className="stack">
