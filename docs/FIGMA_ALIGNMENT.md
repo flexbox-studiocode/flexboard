@@ -55,6 +55,10 @@ Validate and commit each logical change with explicit staging. Use the existing 
 - Visual review found and fixed cross-route CSS overriding homepage panel colors. Color assertions now cover the navy/blue surfaces. Screenshot capture is not an automated Figma pixel-diff.
 - No new dependencies, production data mocks, API endpoints, database changes or credentials were introduced. No claim of pixel-perfect rendering for unavailable content or screens without dedicated frames.
 
+## Follow-up visual refinement
+
+The measured typography/spacing/icon/panel pass is documented in `VISUAL_REFINEMENT.md` on `feat/visual-refinement`. It preserves all approved differences listed above. Latest frontend checks: 78 component tests, 38 Chromium tests, lint and build passed. Deployment Node checks: 3 passed; the inherited database/seed suite is blocked by missing local setup, not treated as passing.
+
 ## Integration boundary
 
 This work aligns frontend presentation, not production integration. API contracts, auth, role capabilities, reporting scope and timezone decisions remain pending. See `FRONTEND_API_PROPOSAL.md` and `FRONTEND_STATUS.md`.

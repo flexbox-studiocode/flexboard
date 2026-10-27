@@ -95,6 +95,16 @@ Kontrak endpoint dan payload: lihat FRONTEND_API_PROPOSAL.md. Implementasi integ
 
 Keputusan produk pada tabel di atas tetap proposed, bukan agreed. Penanggung jawab keputusan: pemilik produk; kontrak teknis: Kiandra bersama frontend. Tanggal pencatatan: 27 Oktober 2026; tanggal persetujuan belum ada.
 
+## Perapian visual lanjutan
+
+Branch `feat/visual-refinement` mempertahankan baseline lokal `ae939fa`, termasuk merge/database work yang sudah ada sebelum tahap ini. Perubahan tahap ini hanya frontend, aset pencarian lokal, tes dan dokumentasi.
+
+- Tipografi heading/navigation/search, spacing banner, ikon pencarian Figma lokal, padding panel, dekorasi tim, proporsi form/detail, serta baris progres/aktivitas dirapikan berdasarkan ukuran tujuh frame.
+- Penyesuaian PRD tetap: checklist sebagai sumber progres, tanpa upload/persentase manual, tanpa data contoh produksi, aktivitas ringkas di Beranda, field/filter dan dialog pratinjau dipertahankan.
+- Validasi terbaru: lint lulus; 78 tes komponen; 38 tes Chromium; 3 tes konfigurasi deployment; build lulus. Tambahan delapan tes browser mengukur font, geometri dan area klik. Rincian/pengecualian: `VISUAL_REFINEMENT.md`.
+- Suite Node keseluruhan belum lulus pada environment ini: modul `pg` belum terpasang dan `.env` tidak tersedia untuk tes database/seed warisan. Tidak ada perubahan backend/dependensi untuk menutupi blocker tersebut.
+- Screenshot sebelum/sesudah tersedia lokal di direktori Temp `opencode/visual-refinement-before` dan `opencode/visual-refinement-after`; bukan hasil pixel-diff seluruh halaman.
+
 ## Git
 
 Branch penyelarasan: `feat/figma-alignment`, dari `feat/frontend-foundation`. Identitas: Rainer <rainersimanjuntak59@gmail.com>; autentikasi `Constanvel` diverifikasi sebelum implementasi.
