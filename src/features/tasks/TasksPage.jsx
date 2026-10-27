@@ -6,7 +6,7 @@ import './tasks.css'
 
 export default function TasksPage() {
   return <div className="feature-page tasks-page">
-    <PageHeader title="Tugas Kami" description="Satu ruang tugas bersama, perkembangan pekerjaan masing-masing anggota." actions={<Link className="button" to="/tasks/new"><Plus size={18} aria-hidden="true" />Tambah tugas<span className="sr-only"> — pratinjau form tugas</span></Link>} />
+    <PageHeader title="Tugas Kami" description="Satu ruang tugas bersama, perkembangan pekerjaan masing-masing anggota." actions={<Link className="button" to="/tasks/new"><Plus size={20} strokeWidth={1.5} aria-hidden="true" />Tambah tugas<span className="sr-only"> — pratinjau form tugas</span></Link>} />
     <Panel className="feature-panel task-filters" aria-label="Pencarian dan filter tugas">
       <FilterToolbar placeholder="Cari judul atau deskripsi tugas…" member dates taskFilters />
     </Panel>

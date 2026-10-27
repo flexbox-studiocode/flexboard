@@ -30,7 +30,7 @@ function TaskForm({ editing }) {
               <Input className="task-form-title" label="Judul tugas" name="title" value={fields.title} onChange={update} placeholder="Tuliskan judul tugas" autoComplete="off" disabled={editing} />
               <Input label="Tenggat" name="due" type="datetime-local" value={fields.due} onChange={update} disabled={editing} hint="Zona waktu dan aturan tenggat mengikuti kontrak server." />
             </div>
-            <Textarea className="task-form-description" label="Deskripsi" name="description" value={fields.description} onChange={update} placeholder="Jelaskan tujuan, ruang lingkup, dan hasil yang diharapkan" rows={7} disabled={editing} hint="Arahan untuk tim. Progres tidak diisi manual; progres mengikuti checklist tersimpan." />
+            <Textarea className="task-form-description" label="Deskripsi" name="description" value={fields.description} onChange={update} placeholder="Jelaskan tujuan, ruang lingkup, dan hasil yang diharapkan" rows={6} disabled={editing} hint="Arahan untuk tim. Progres tidak diisi manual; progres mengikuti checklist tersimpan." />
             <Select label="Proyek" value="" disabled hint="Daftar proyek memerlukan layanan dan hak akses."><option value="">Pilihan proyek belum tersedia</option></Select>
             <Select label="Penanggung jawab" value={[]} multiple disabled hint="Satu atau beberapa anggota dapat dipilih setelah data tersedia."><option value="" disabled>Daftar anggota belum tersedia</option></Select>
             <div className="task-form-row">
