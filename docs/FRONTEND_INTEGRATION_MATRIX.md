@@ -66,6 +66,17 @@ Semua pertanyaan masih terbuka; pemilik produk menetapkan kebijakan, Kiandra/bac
 | P1 | Untuk memenuhi kebutuhan laporan/kendala PRD, apakah bentuknya satu ringkasan per anggota atau riwayat? Apakah aktivitas memuat laporan, audit perubahan, atau keduanya? | `FRONTEND_STATUS.md:63`; `TaskDetailPage.jsx:25–31`; `ActivityPage.jsx:9–14`. |
 | P1 | Apa semantik soft archive, restore, keterlihatan histori dan dampaknya pada tugas/progres/membership? Apa aturan input/display deadline dan overdue? | `FRONTEND_STATUS.md:58,62,64`; `FRONTEND_API_PROPOSAL.md:21,27,57–58`. |
 
+## Penghubung UI internal — bukan kontrak API
+
+Empat halaman daftar menerima resource melalui props: `TasksPage({ tasks, members })`, `TeamProgressPage({ progress })`, `MembersPage({ members })`, dan `ActivityPage({ activity })`. Entry resource memakai `{ status, scope, items, onRetry }` sebagai model UI internal, bukan payload jaringan.
+
+- `status`: `unavailable`, `loading`, `error`, atau `success`; array kosong pada success adalah hasil kosong terverifikasi.
+- `scope`: string persis `pathname + search` dari React Router. Resource tanpa scope cocok tidak dirender; perubahan pencarian/filter segera menyembunyikan item dan callback retry lama. Ini pengaman tampilan saja, bukan cancellation request, authorization, atau pengganti isolasi cache/sesi kelak.
+- `items`: array props presentasi untuk TaskCard, MemberCard, MemberProgressList, atau ActivityList. Success tanpa array diperlakukan sebagai error, bukan kosong. Mapping schema backend baru dibuat setelah kontrak disetujui.
+- `onRetry`: callback opsional pada error; tanpa callback tidak ada tombol retry. Loading/error tidak mempertahankan item sebelumnya dan UI tidak menampilkan detail error server mentah.
+- Route aplikasi tidak memasok resource; runtime tetap unavailable, filter tetap URL lokal, dan pagination tidak dipasang tanpa metadata/kontrak. State berisi hanya diuji lewat props sintetis dalam tes dan harness browser di `tests/browser/fixtures/`, bukan fallback aplikasi.
+- Form tugas menyatukan field dan rancangan checklist dalam state induk. ChecklistDraft controlled tidak menjadi schema create/update API, tidak menyimpan data, dan tidak membuat progres/status selesai.
+
 ## Urutan integrasi dan kriteria serah-terima
 
 1. **Setujui kontrak dan environment terlebih dahulu.** Catat keputusan/version kontrak, URL tanpa secret, schema request/response/error, capability, dan aturan progres. Jangan mengaktifkan login/mutasi berdasarkan proposal saja.
