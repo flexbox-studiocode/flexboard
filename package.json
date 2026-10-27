@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:browser": "playwright test",
     "test:watch": "vitest",
-    "test:node": "node --test"
+    "test:node": "node --test tests/node/*.test.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "4.3.4",
