@@ -27,6 +27,34 @@ it('menyusun checklist lokal tanpa status selesai, progres, atau penyimpanan', a
   expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeDisabled()
 })
 
+it('mengembalikan fokus keyboard ke item berikutnya, sebelumnya, lalu tombol tambah setelah hapus', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  for (let index = 0; index < 3; index += 1) {
+    await user.click(screen.getByRole('button', { name: 'Tambah item checklist' }))
+    await user.type(screen.getByLabelText(`Item checklist ${index + 1}`), `Rancangan lokal ${index + 1}`)
+  }
+
+  screen.getByLabelText('Item checklist 2').focus()
+  await user.tab()
+  expect(screen.getByRole('button', { name: 'Hapus item checklist 2' })).toHaveFocus()
+  await user.keyboard('{Enter}')
+  expect(screen.getByLabelText('Item checklist 2')).toHaveFocus()
+  expect(screen.getByLabelText('Item checklist 2')).toHaveValue('Rancangan lokal 3')
+
+  await user.tab()
+  await user.keyboard(' ')
+  expect(screen.getByLabelText('Item checklist 1')).toHaveFocus()
+  expect(screen.getByLabelText('Item checklist 1')).toHaveValue('Rancangan lokal 1')
+
+  await user.tab()
+  await user.keyboard('{Enter}')
+  expect(screen.getByRole('button', { name: 'Tambah item checklist' })).toHaveFocus()
+  expect(screen.queryByLabelText('Item checklist 1')).not.toBeInTheDocument()
+  await user.keyboard('{Enter}')
+  expect(screen.getByLabelText('Item checklist 1')).toHaveFocus()
+})
+
 it('menempatkan judul, tenggat, arahan, dan field PRD dalam satu panel form', () => {
   renderForm()
   const panel = screen.getByRole('region', { name: 'Form informasi tugas' })
