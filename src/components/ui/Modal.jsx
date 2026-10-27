@@ -18,7 +18,16 @@ export function Modal({ open, onClose, title, children, className = '' }) {
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus()
     }
   }, [open])
-  return <dialog ref={ref} className={`modal ${className}`} aria-labelledby={titleId} onCancel={event => { event.preventDefault(); onClose() }} onClick={event => { if (event.target === ref.current) onClose() }}>
+  function containFocus(event) {
+    if (event.key !== 'Tab') return
+    const elements = [...ref.current.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')].filter(element => element.getClientRects().length > 0)
+    const first = elements[0]
+    const last = elements.at(-1)
+    if (!first) { event.preventDefault(); return }
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+    if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+  }
+  return <dialog ref={ref} className={`modal ${className}`} aria-labelledby={titleId} onKeyDown={containFocus} onCancel={event => { event.preventDefault(); onClose() }} onClick={event => { if (event.target === ref.current) onClose() }}>
     <div className="modal__heading"><h2 id={titleId}>{title}</h2><IconButton label="Tutup dialog" onClick={onClose}><X size={21} /></IconButton></div>
     {open && children}
   </dialog>

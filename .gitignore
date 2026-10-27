@@ -5,5 +5,7 @@ dist/
 !.env.example
 *.log
 .vite/
-coverage/
+coverage
+playwright-report
+test-results/
 .DS_Store

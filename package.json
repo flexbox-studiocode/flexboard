@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
+    "test:browser": "playwright test",
     "test:watch": "vitest",
     "test:node": "node --test"
   },
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@playwright/test": "1.64.1",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.8",
