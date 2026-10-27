@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, Info, Save } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, Input, PageHeader, Panel, Select, Textarea, UnavailableState } from '../../components/ui/index.js'
-import { DataNotice, SectionHeading } from '../common/FeatureUI.jsx'
+import { SectionHeading } from '../common/FeatureUI.jsx'
 import ChecklistDraft from './ChecklistDraft.jsx'
 import './tasks.css'
 
@@ -17,21 +17,23 @@ function TaskForm({ editing }) {
   const update = event => setFields(previous => ({ ...previous, [event.target.name]: event.target.value }))
   const invalidWeight = fields.weight !== '' && (!Number.isFinite(Number(fields.weight)) || Number(fields.weight) <= 0)
 
-  return <div className="feature-page">
+  return <div className="feature-page task-form-page">
     <Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} aria-hidden="true" />Kembali ke Tugas Kami</Link>
-    <PageHeader eyebrow="TASK FORM PREVIEW" title={editing ? 'Edit tugas' : 'Form tugas baru'} description="Pratinjau struktur formulir. Penyimpanan menunggu layanan tugas dan verifikasi izin." />
+    <PageHeader title={editing ? 'Edit tugas' : 'Form tugas baru'} description="Satu tugas bersama, konteks dan arahan yang jelas untuk tim. Form ini masih pratinjau lokal." />
     {editing && <Panel className="feature-panel"><UnavailableState title="Data tugas belum dapat dimuat" description="Nilai tugas saat ini dan hak edit belum dapat diverifikasi. Formulir di bawah tidak mewakili data tersimpan." /></Panel>}
     <div className="task-form-layout">
-      <Panel className="feature-panel">
+      <Panel className="feature-panel task-form-panel" aria-label="Form informasi tugas">
         <form onSubmit={event => event.preventDefault()} aria-describedby="task-save-notice">
           <SectionHeading title="Informasi tugas" description="Jelaskan pekerjaan dan konteks yang diperlukan oleh tim." />
           <div className="task-form-fields">
-            <Input label="Judul tugas" name="title" value={fields.title} onChange={update} placeholder="Tuliskan judul tugas" autoComplete="off" disabled={editing} />
-            <Textarea label="Deskripsi" name="description" value={fields.description} onChange={update} placeholder="Jelaskan tujuan, ruang lingkup, dan hasil yang diharapkan" rows={5} disabled={editing} />
+            <div className="task-form-hero-row">
+              <Input className="task-form-title" label="Judul tugas" name="title" value={fields.title} onChange={update} placeholder="Tuliskan judul tugas" autoComplete="off" disabled={editing} />
+              <Input label="Tenggat" name="due" type="datetime-local" value={fields.due} onChange={update} disabled={editing} hint="Zona waktu dan aturan tenggat mengikuti kontrak server." />
+            </div>
+            <Textarea className="task-form-description" label="Deskripsi" name="description" value={fields.description} onChange={update} placeholder="Jelaskan tujuan, ruang lingkup, dan hasil yang diharapkan" rows={7} disabled={editing} hint="Arahan untuk tim. Progres tidak diisi manual; progres mengikuti checklist tersimpan." />
             <Select label="Proyek" value="" disabled hint="Daftar proyek memerlukan layanan dan hak akses."><option value="">Pilihan proyek belum tersedia</option></Select>
             <Select label="Penanggung jawab" value={[]} multiple disabled hint="Satu atau beberapa anggota dapat dipilih setelah data tersedia."><option value="" disabled>Daftar anggota belum tersedia</option></Select>
             <div className="task-form-row">
-              <Input label="Tenggat" name="due" type="datetime-local" value={fields.due} onChange={update} disabled={editing} hint="Zona waktu dan aturan tenggat mengikuti kontrak server." />
               <Input label="Bobot" name="weight" type="number" step="any" value={fields.weight} onChange={update} disabled={editing} placeholder="Belum ditetapkan" error={invalidWeight ? 'Bobot harus lebih besar dari nol.' : undefined} hint="Tidak ada bobot bawaan. Nilai harus lebih besar dari nol." />
             </div>
             <div className="task-form-row">
@@ -44,10 +46,10 @@ function TaskForm({ editing }) {
           <div className="task-form-actions"><Link className="button button--secondary" to="/tasks">Kembali</Link><Button type="submit" disabled><Save size={16} aria-hidden="true" />Simpan tugas</Button></div>
         </form>
       </Panel>
-      <aside className="stack">
-        <DataNotice title="Kejelasan sebelum mulai">Tugas menghubungkan tujuan, penanggung jawab, dan tenggat. Checklist akan menjadi dasar progres setelah layanan tersedia.</DataNotice>
-        <Panel className="feature-panel"><SectionHeading title="Tentang pratinjau ini" /><ul className="task-form-guidance"><li>Belum ada tugas atau perubahan yang dibuat.</li><li>Daftar proyek dan anggota mengikuti akses dari server.</li><li>Aturan status, prioritas, bobot, dan review perlu dikonfirmasi.</li><li>Izin membuat atau mengedit akan diverifikasi oleh backend.</li></ul></Panel>
-      </aside>
+      <details className="task-form-help">
+        <summary>Tentang pratinjau ini</summary>
+        <ul className="task-form-guidance"><li>Belum ada tugas atau perubahan yang dibuat.</li><li>Daftar proyek dan anggota mengikuti akses dari server.</li><li>Aturan status, prioritas, bobot, dan review perlu dikonfirmasi.</li><li>Izin membuat atau mengedit akan diverifikasi oleh backend.</li></ul>
+      </details>
     </div>
   </div>
 }

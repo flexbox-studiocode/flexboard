@@ -27,6 +27,17 @@ it('menyusun checklist lokal tanpa status selesai, progres, atau penyimpanan', a
   expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeDisabled()
 })
 
+it('menempatkan judul, tenggat, arahan, dan field PRD dalam satu panel form', () => {
+  renderForm()
+  const panel = screen.getByRole('region', { name: 'Form informasi tugas' })
+  expect(panel).toHaveClass('task-form-panel')
+  for (const label of ['Judul tugas', 'Tenggat', 'Deskripsi', 'Proyek', 'Penanggung jawab', 'Bobot', 'Prioritas', 'Status']) {
+    expect(panel).toContainElement(screen.getByLabelText(label))
+  }
+  expect(screen.getByLabelText('Judul tugas').closest('.task-form-hero-row')).toContainElement(screen.getByLabelText('Tenggat'))
+  expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+})
+
 it('menolak bobot nol tanpa memilih default atau enum yang belum disepakati', async () => {
   renderForm()
   const weight = screen.getByLabelText('Bobot')

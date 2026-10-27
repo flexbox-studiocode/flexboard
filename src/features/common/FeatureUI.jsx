@@ -4,7 +4,7 @@ import { Button, Input, SearchField, Select } from '../../components/ui/index.js
 import './features.css'
 
 export function SectionHeading({ eyebrow, title, description, to, linkLabel }) {
-  return <div className="feature-section-heading"><div>{eyebrow && <p className="feature-eyebrow">{eyebrow}</p>}<h2>{title}</h2>{description && <p>{description}</p>}</div>{to && <Link className="feature-text-link" to={to}>{linkLabel}<ArrowUpRight size={16} aria-hidden="true" /></Link>}</div>
+  return <div className="feature-section-heading"><div>{eyebrow && <p className="feature-eyebrow sr-only">{eyebrow}</p>}<h2>{title}</h2>{description && <p>{description}</p>}</div>{to && <Link className="feature-text-link" to={to}>{linkLabel}<ArrowUpRight size={16} aria-hidden="true" /></Link>}</div>
 }
 
 export function MetricCard({ label, icon: Icon, caption, tone = 'blue' }) {
