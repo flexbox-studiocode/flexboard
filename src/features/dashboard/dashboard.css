@@ -2,7 +2,7 @@
 .dashboard-page .page-header { border-bottom: 4px solid #c4ccd2; padding-bottom: 1.7rem; margin-bottom: 0; align-items: center; }
 .dashboard-page .page-header .button { border-radius: 0; }
 .dashboard-intro { margin: -.4rem 0 0; font-family: var(--font-display); font-size: clamp(1rem, 1.6vw, 1.5rem); }
-.dashboard-shared-task { background: var(--color-ink); color: white; border: 0; border-left: 13px solid var(--color-primary); padding: 2rem 2.5rem; }
+.panel.dashboard-shared-task { background: var(--color-ink); color: white; border: 0; border-left: 13px solid var(--color-primary); padding: 2rem 2.5rem; }
 .dashboard-task-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 2px solid #ffffffa6; padding-bottom: 1.3rem; }
 .dashboard-task-heading h2 { margin: 0; font-family: var(--font-display); font-size: clamp(1.5rem, 2.8vw, 2.5rem); }
 .dashboard-task-status { display: inline-flex; align-items: center; background: white; color: var(--color-ink); font-size: .72rem; padding-left: .65rem; gap: .65rem; }
@@ -15,7 +15,7 @@
 .dashboard-task-footer .progress-block__label { font-family: var(--font-mono); font-size: 1rem; }
 .dashboard-task-footer .progress-block__label strong { color: white; font-family: var(--font-display); }
 .dashboard-task-footer .progress-track { border-radius: 0; height: 5px; }
-.dashboard-team { position: relative; isolation: isolate; margin-block: 1.5rem 2rem; background: #3b77b2; color: white; border: 0; padding: 2rem 2.5rem; }
+.panel.dashboard-team { position: relative; isolation: isolate; margin-block: 1.5rem 2rem; background: #3b77b2; color: white; border: 0; padding: 2rem 2.5rem; }
 .dashboard-team::before { content: ''; position: absolute; z-index: -1; inset: -18px 7% 0; background: var(--color-ink); }
 .dashboard-team::after { content: ''; position: absolute; inset: 0; z-index: -1; background: #3b77b2; border-bottom: 12px solid var(--color-ink); bottom: -22px; }
 .dashboard-team .feature-section-heading { border: 0; padding: 0; }
