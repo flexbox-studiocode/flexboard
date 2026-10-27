@@ -7,7 +7,7 @@ import App from '../App.jsx'
 function renderRoute(route) {
   return render(<MemoryRouter initialEntries={[route]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><App /></MemoryRouter>)
 }
-describe('Routing pratinjau tanpa simulasi backend', () => {
+describe('Routing aplikasi', () => {
   it.each([
     ['/', 'Beranda'], ['/tasks', 'Tugas Kami'], ['/team-progress', 'Progres Tim'], ['/members', 'Anggota'], ['/activity', 'Aktivitas'], ['/tasks/new', 'Form tugas baru'], ['/tasks/unavailable/edit', 'Edit tugas'],
   ])('menampilkan %s tanpa data produksi', (route, heading) => {
@@ -15,12 +15,12 @@ describe('Routing pratinjau tanpa simulasi backend', () => {
     expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
     expect(screen.getByText(/Pratinjau antarmuka tanpa sesi/)).toBeInTheDocument()
   })
-  it('login tidak menyediakan sesi atau akun demo', () => {
+  it('login menyediakan form tanpa akun demo', () => {
     renderRoute('/login')
     expect(screen.getByRole('heading', { name: 'Masuk ke FlexBoard' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Masuk belum tersedia' })).toBeDisabled()
-    expect(screen.getByLabelText('Identitas akun')).toBeDisabled()
-    expect(screen.getByLabelText('Password')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Masuk' })).toBeEnabled()
+    expect(screen.getByLabelText('Email')).toBeEnabled()
+    expect(screen.getByLabelText('Password')).toBeEnabled()
   })
   it('mendukung halaman tidak ditemukan', () => {
     renderRoute('/alamat-tidak-tersedia')

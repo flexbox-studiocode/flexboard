@@ -1,21 +1,27 @@
-import { describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import LoginPage from './LoginPage.jsx'
 
-describe('Login alignment', () => {
-  it('retains the card, decorative watermark and honest unavailable login', () => {
+describe('Login', () => {
+  it('menampilkan form login nyata tanpa kredensial demo', () => {
     const { container } = render(<MemoryRouter><LoginPage /></MemoryRouter>)
     expect(screen.getByRole('region', { name: 'Masuk ke FlexBoard' })).toHaveClass('auth-card')
     expect(container.querySelector('.auth-watermark')).toHaveAttribute('alt', '')
-    expect(screen.getByLabelText('Identitas akun')).toBeDisabled()
-    expect(screen.getByLabelText('Password')).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Masuk belum tersedia' })).toBeDisabled()
-    expect(screen.getByRole('status')).toHaveTextContent('Autentikasi belum terhubung')
+    expect(screen.getByLabelText('Email')).toBeEnabled()
+    expect(screen.getByLabelText('Password')).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Masuk' })).toBeEnabled()
     expect(screen.queryByText(/Demo123/)).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Lihat pratinjau antarmuka' })).toHaveAttribute('href', '/')
-    const submit = new Event('submit', { bubbles: true, cancelable: true })
-    fireEvent(container.querySelector('form'), submit)
-    expect(submit.defaultPrevented).toBe(true)
+  })
+
+  it('mengirim credential ke endpoint Better Auth dan menampilkan error umum', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false })
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
+    await userEvent.type(screen.getByLabelText('Email'), 'user@example.test')
+    await userEvent.type(screen.getByLabelText('Password'), 'wrong-pass')
+    await userEvent.click(screen.getByRole('button', { name: 'Masuk' }))
+    expect(fetch).toHaveBeenCalledWith('/api/auth/sign-in/email', expect.objectContaining({ method: 'POST', credentials: 'include' }))
+    expect(await screen.findByText('Email atau password tidak valid.')).toBeInTheDocument()
   })
 })
