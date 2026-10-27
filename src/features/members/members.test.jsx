@@ -1,8 +1,27 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MemberCard from './MemberCard.jsx'
 import { AccountManagementForm } from './AccountManagementDialog.jsx'
+import { MemoryRouter } from 'react-router-dom'
+import MembersPage from './MembersPage.jsx'
+
+describe('Members page alignment', () => {
+  it('uses one team panel without fabricated counts and retains account preview', async () => {
+    const { container } = render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><MembersPage /></MemoryRouter>)
+    const panel = screen.getByRole('region', { name: 'Daftar anggota' })
+    expect(within(panel).getByRole('heading', { name: 'Daftar anggota belum dapat dimuat' })).toBeInTheDocument()
+    expect(container.querySelector('.feature-metric')).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Proyek' })).toBeDisabled()
+    const dialog = container.querySelector('dialog')
+    dialog.showModal = vi.fn(() => dialog.setAttribute('open', ''))
+    dialog.close = vi.fn(() => dialog.removeAttribute('open'))
+    await userEvent.click(screen.getByRole('button', { name: 'Pratinjau pengelolaan akun' }))
+    expect(dialog.showModal).toHaveBeenCalledOnce()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Simpan perubahan' })).toBeDisabled()
+  })
+})
 
 // Generic presentation values only. No account fixtures or API substitutes.
 describe('MemberCard', () => {
