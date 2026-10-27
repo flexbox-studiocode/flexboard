@@ -6,6 +6,7 @@
 .button--ghost { color: var(--color-ink); background: transparent; }
 .button--danger { color: #fff; background: var(--color-danger); }
 .button:disabled { cursor: not-allowed; opacity: .55; }
+.button > .lucide, .field__leading-icon > .lucide { width: var(--icon-size); height: var(--icon-size); stroke-width: var(--icon-stroke); flex-shrink: 0; }
 .icon-button { padding: .65rem; width: 44px; flex: 0 0 44px; }
 .field { display: grid; gap: .5rem; min-width: 0; }
 .field > label { font-size: .85rem; font-weight: 700; }
