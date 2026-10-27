@@ -1,0 +1,5 @@
+@import '../common/features.css';
+.activity-audit-note { display: flex; gap: .85rem; padding: 1.25rem; color: var(--color-muted); }
+.activity-audit-note > svg { flex-shrink: 0; color: var(--color-primary); margin-top: .1rem; }
+.activity-audit-note h2 { font-family: var(--font-display); color: var(--color-ink); font-size: .9rem; margin: 0 0 .45rem; }
+.activity-audit-note p { font-size: .78rem; line-height: 1.8; margin: 0; }
