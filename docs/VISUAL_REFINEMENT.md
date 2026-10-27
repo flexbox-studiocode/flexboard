@@ -35,6 +35,37 @@ Compare the 1440 px implementation with the natural 1440 px Figma frames, not sc
 - Existing logo is reused with contained aspect ratio. Dynamic profile images/sample avatars are not downloaded. Existing responsive decorative brackets remain; use the exact search asset for the desktop banner.
 - Validate 320–1920 px, keyboard/dialog/filter/checklist regression, font loading, local image geometry, screenshots before/after and production build. Screenshot capture is not a Figma pixel-diff.
 
+## Per-page refinements
+
+| Area | Before | Implemented reference |
+| --- | --- | --- |
+| Tasks | 3 px divider, 16 px workspace label | 5 px divider (`1:279`), 20 px/30 px label (`1:284–285`) |
+| Task card | Oxanium title, small deadline | Plus Jakarta Sans 24 px/30 px title (`1:190`), 16 px deadline (`1:192`) |
+| Task form | 28 px section heading, smaller controls | 36 px section heading (`1:606`), 20 px/30 px labels/controls and 65 px input (`1:583/601–605`) |
+| Form description | 232 px minimum; 7 native rows | 236 px minimum (`1:584`), 6 native rows to prevent intrinsic height exceeding target |
+| Form columns | 3:1 ratio, 32 px gap | 1000:220 proportion with up to 85 px gap (`1:583/609`); native datetime keeps 256 px minimum instead of reference date-only 220 px |
+| Detail report | Full available width | 78.5%, up to 993 px (`1:493/538`); mobile full width; no progress/upload controls |
+| Progress/activity panels | Effective 32 px shared padding overriding page rule | 52 px vertical, 40 px horizontal (`1:294/307`, `1:416/427`), protected from shared `.panel` override |
+| Progress identity | 51 px width but inherited 42 px flex basis | Actual 51 px basis (`1:350`), 20 px initials (`1:352`) |
+| Progress measurement | Percentage above rounded track | Percentage beside 8 px square track (`1:326/330`) |
+| Activity rows | 18.4 px title, 12.8 px metadata, 14.4 px body | 20/15/16 px with 30 px rhythm (`1:450/436/441`); 178 px desktop row minimum, content can grow |
+| Login | 48 px top, 76.8 px horizontal card padding | 50 px top, 78 px left, 67 px right; 915 px card and 74 px input (`1:554/559`) |
+
+Members reuses the supported panel/avatar/control patterns. No dedicated frame fidelity claimed. Mobile form controls use 16 px text and reduced horizontal inset for readability; desktop-only typography is not forced onto narrow inputs.
+
+## Final verification
+
+- `npm run lint`: passed.
+- `npm test`: 78 tests passed (13 files).
+- `npm run test:browser`: 38 tests passed, including eight new numerical geometry/font/touch-target checks. Captures 10 routes at 390/1440 px; regression coverage includes nine widths 320–1920 px.
+- `node --test tests/node/deployment.test.js`: 3 passed.
+- `npm run build`: passed.
+- Broader Node suite is blocked by pre-existing database setup: installed modules lack `pg`; `.env` is absent. Direct full Node run produced three failures in database/seed checks. No database config, dependencies or secrets were added to make visual work pass. `npm run test:node` now requires `.env` in the inherited package script.
+- Geometric checks found and corrected missing Orbitron 700 usage, textarea native-row height, and shared panel specificity. Reference font checks passed for Oxanium, Orbitron, Share Tech Mono and Plus Jakarta Sans in Chromium.
+- A same-scale banner overlay was inspected against Figma. It exposed vertically centered welcome text, corrected to the reference top inset. Header navigation horizontal positions, logo baseline and decorative bracket geometry still differ from the fixed Figma canvas; they are retained responsive primitives, not claimed within the numeric <=4 px set. Anonymous title copy necessarily differs.
+- Final local screenshots: `C:/Users/IDEAPAD SLIM 3/AppData/Local/Temp/opencode/visual-refinement-after`. Before/after captures use identical viewport, routes and unavailable-data state. Representative desktop/mobile screenshots reviewed; this remains measured refinement, not a whole-page Figma pixel-diff.
+- Static numerical targets explicitly tested meet the <=4 px tolerance. Whole-page positions differ for approved extra fields, notices, placeholder copy and absent production rows. Those differences are not hidden with fixed heights or invented data.
+
 ## Commit procedure
 
 Commit this baseline, then shared typography/tokens, shared spacing/icons, home, tasks/forms, supporting pages, tests and final evidence in logical commits. Run relevant checks before each commit and explicitly stage paths. Identity: `Rainer <rainersimanjuntak59@gmail.com>`, authenticated account `Constanvel`. Push the new branch once after final validation. No force push, merge to main, hook bypass or unrelated staging.
