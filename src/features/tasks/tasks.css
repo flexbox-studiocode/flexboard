@@ -22,9 +22,16 @@
 .task-card-progress { margin: 1.25rem 0; }
 .task-card-footer { padding-top: 1rem; border-top: 1px solid var(--color-border); }
 .task-card-footer > span { display: inline-flex; align-items: center; gap: .4rem; font-size: .7rem; color: var(--color-muted); }
-.task-card-assignees { display: flex; gap: .3rem; }
+.task-card-assignees { display: flex; flex-wrap: wrap; gap: .3rem; list-style: none; padding: 0; margin: 0; }
 .task-checklist-item { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: .6rem; border-bottom: 1px solid var(--color-border); padding: 1rem 0; }
 .task-checklist-item > span { font-size: .72rem; color: var(--color-muted); }
 .task-checklist-item--completed label { color: var(--color-muted); text-decoration: line-through; }
+.checklist-draft { min-width: 0; margin: .5rem 0 0; padding: 1.25rem; border: 1px solid var(--color-border); }
+.checklist-draft legend { font-family: var(--font-display); font-weight: 700; padding-inline: .4rem; }
+.checklist-draft > p { font-size: .75rem; line-height: 1.8; }
+.checklist-draft__row { display: flex; gap: .5rem; align-items: flex-end; }
+.checklist-draft__row .field { flex: 1; }
+.checklist-draft > .button { margin-top: 1rem; }
+.checklist-draft__count { color: var(--color-muted); margin-bottom: 0; }
 @media (max-width: 1000px) { .task-form-layout { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .task-form-row { grid-template-columns: 1fr; } .task-form-actions { justify-content: stretch; } .task-form-actions > * { flex: 1; } }
