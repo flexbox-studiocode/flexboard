@@ -39,6 +39,8 @@ Invoke-RestMethod http://localhost:3000/api/health
 ```
 Atau deploy ke Vercel dan panggil URL `/api/health`. Vite dev server tidak menjalankan function `api/` secara langsung.
 
+`vercel.json` memprioritaskan file/function yang tersedia, mengembalikan 404 untuk API yang tidak tersedia, lalu mengarahkan deep link frontend ke `index.html`. Konfigurasi diuji lokal; deployment nyata belum diverifikasi.
+
 ## Script
 - `npm run dev` — development server
 - `npm run build` — build produksi
@@ -47,7 +49,7 @@ Atau deploy ke Vercel dan panggil URL `/api/health`. Vite dev server tidak menja
 - `npm test` — Vitest dan React Testing Library untuk komponen/routing tanpa mock API
 - `npm run test:watch` — mode pengembangan tes komponen
 - `npm run test:browser` — Playwright Chromium; jalankan `npx playwright install chromium` terlebih dahulu
-- `npm run test:node` — Node test runner untuk tes Node terpisah (belum ada tes domain)
+- `npm run test:node` — 3 tes konfigurasi routing deployment, terpisah dari Vitest/Playwright; bukan pengujian runtime Vercel
 
 Tes browser menjalankan Vite lokal otomatis atau memakai server yang sudah aktif pada `127.0.0.1:5173`. Tidak membuat akun/sesi/tugas palsu dan tidak menguji backend yang belum tersedia.
 
@@ -69,6 +71,6 @@ tests/browser/         # smoke test UI Chromium tanpa backend
 Salin `.env.example` menjadi `.env` untuk konfigurasi lokal. `DATABASE_URL` dan `AUTH_SECRET` hanya untuk backend dan belum digunakan pada Tahap 1. Jangan memakai prefix `VITE_` untuk secret.
 
 ## Status Tahap 1
-PostgreSQL, autentikasi, sesi, role, migration, API domain, dan data produksi belum tersedia. Halaman workspace merupakan pratinjau publik tanpa data privat dan dengan pengungkapan status integrasi. Aksi penyimpanan dan login nonaktif; input form baru hanya state lokal yang hilang saat keluar halaman. Jangan memasukkan data sensitif pada pratinjau. Provider PostgreSQL, strategi autentikasi, kontrak API, serta aturan bisnis terbuka harus disepakati sebelum integrasi.
+PostgreSQL, autentikasi, sesi, role, migration, API domain, dan data produksi belum tersedia. Halaman workspace merupakan pratinjau publik tanpa data privat dan dengan pengungkapan status integrasi. Aksi penyimpanan dan login nonaktif; input form baru dan rancangan checklist hanya state lokal yang hilang saat keluar halaman. Profil pratinjau tidak menampilkan identitas atau role sebelum sesi tersedia. Jangan memasukkan data sensitif pada pratinjau. Provider PostgreSQL, strategi autentikasi, kontrak API, serta aturan bisnis terbuka harus disepakati sebelum integrasi.
 
 Audit dependensi masih melaporkan 2 temuan moderate React Router yang memerlukan evaluasi migrasi major; tidak ada high/critical pada audit terakhir. Jangan menganggap fondasi ini siap produksi.

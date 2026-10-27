@@ -10,7 +10,11 @@ Tanggal: 27 Oktober 2026. Status: **fondasi dan pratinjau UI; bukan MVP end-to-e
 - Menu mobile dialog native, penahanan fokus, Escape, pengembalian fokus, skip link.
 - Beranda, Tugas Kami, detail tugas, form baru/edit, Progres Tim, Anggota, Aktivitas, Login.
 - Pencarian/filter URL lokal, reset, navigasi antarrute; bukan pencarian API.
-- Form baru menerima input lokal tanpa penyimpanan. Form edit tidak mengaku memuat tugas.
+- Form baru menerima input lokal dan rancangan checklist tanpa penyimpanan/status selesai/progres. State direset ketika referensi route berubah. Form edit tidak mengaku memuat tugas.
+- Komponen feedback aksesibel dan pagination terkontrol tersedia, belum dipasang pada daftar tanpa metadata API.
+- Profil pratinjau dapat dibuka melalui tombol akun desktop/mobile; identitas/role/status/progres tetap — dan aksi akun disabled.
+- Rentang tanggal terbalik diberi error aksesibel tanpa membuang nilai input atau parameter URL.
+- Klik padding dialog tidak lagi menutup dialog; backdrop dan Escape tetap menutup.
 - ProjectDialog dan komponen TaskCard/ChecklistItem disiapkan; tidak mewakili integrasi selesai.
 - Nilai ringkasan memakai tanda —, tidak ada angka/tugas/pengguna/aktivitas domain palsu.
 - State layanan belum tersedia dibedakan dari loading, error, dan data kosong.
@@ -61,13 +65,27 @@ Kontrak endpoint dan payload: lihat FRONTEND_API_PROPOSAL.md. Implementasi integ
 ## Validasi dan batasannya
 
 - Baseline sebelum perubahan: lint/build lulus, 0 tes.
-- Validasi akhir kode: `npm run lint` lulus, `npm test` 16 tes lulus, `npm run test:browser` 9 tes lulus, dan `npm run build` lulus.
+- Validasi akhir kode: `npm run lint` lulus, `npm test` 53 tes lulus, `npm run test:browser` 12 tes lulus, `npm run test:node` 3 tes konfigurasi lulus, dan `npm run build` lulus.
 - Tes unit/komponen menggunakan props generik dan interaksi lokal; tidak memakai mock API/domain.
 - Playwright Chromium memeriksa seluruh sembilan route pada 360/390/768/1024/1440 px: heading, logo terisi, tanpa overflow, tanpa exception browser, tanpa request /api domain.
 - Tes menu: fokus tetap di dialog, Escape, kembali ke trigger, navigasi.
 - Tes pencarian/reset URL dan kontrol login/simpan disabled.
-- Desktop/mobile diperiksa melalui screenshot lokal. Tidak ada deployment Vercel atau pengujian PostgreSQL/akun nyata.
+- Desktop/mobile diperiksa melalui screenshot lokal, termasuk form checklist dan dialog profil.
+- vercel.json menyiapkan filesystem-first routing: function/file yang tersedia diprioritaskan, /api yang tidak tersedia menghasilkan 404, lalu deep link frontend diarahkan ke index.html. Tes Node memeriksa konfigurasi, bukan runtime Vercel. Tidak ada deployment Vercel atau pengujian PostgreSQL/akun nyata.
 - Audit setelah pembaruan Vite 6.4.5 dan Router 6.30.6: 2 moderate, 0 high/critical. Keduanya terkait React Router; npm menyarankan major 7.18.4. Tidak dilakukan migrasi major sepihak. Route aplikasi tidak menerima tujuan eksternal dinamis, dan aplikasi tidak memakai SSR hydration; audit tetap belum bersih dan perlu evaluasi sebelum produksi.
+
+## Matriks tahapan dan dependensi
+
+| Tahap | Status | Batas |
+|---|---|---|
+| 0–2 Fondasi, visual, komponen bersama | Tersedia dan diuji lokal | Feedback/pagination belum dikonsumsi API |
+| 3 UI halaman | Parsial | Profil/rancangan checklist tersedia; tampilan berdata nyata, pengelolaan proyek, laporan, dan akun belum lengkap |
+| 4 API dan autentikasi | Blocked | Kontrak auth, URL development, payload, dan sesi belum disepakati |
+| 5 Proyek/tugas/checklist | Blocked untuk integrasi | Menunggu endpoint, permissions, enum, transisi, dan kebijakan arsip |
+| 6 Ringkasan/anggota/aktivitas | UI unavailable tersedia; integrasi blocked | Membutuhkan data/progres server dan keputusan visibilitas |
+| 7 Pengujian/deployment | Lokal parsial | Tes akun nyata, persistensi, authorization, dan runtime Vercel belum dilakukan |
+
+Keputusan produk pada tabel di atas tetap proposed, bukan agreed. Penanggung jawab keputusan: pemilik produk; kontrak teknis: Kiandra bersama frontend. Tanggal pencatatan: 27 Oktober 2026; tanggal persetujuan belum ada.
 
 ## Git
 
