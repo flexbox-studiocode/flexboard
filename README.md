@@ -70,6 +70,10 @@ tests/browser/         # smoke test UI Chromium tanpa backend
 ## Environment
 Salin `.env.example` menjadi `.env` untuk konfigurasi lokal. `DATABASE_URL` dan `AUTH_SECRET` hanya untuk backend dan belum digunakan pada Tahap 1. Jangan memakai prefix `VITE_` untuk secret.
 
+## PostgreSQL Tahap 2
+
+Setup, migration, status, dan seed development: [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md). Migration memakai `pg`, transaksi per file, dan advisory lock. Belum ada API domain, autentikasi, atau integrasi frontend.
+
 ## Status Tahap 1
 PostgreSQL, autentikasi, sesi, role, migration, API domain, dan data produksi belum tersedia. Halaman workspace merupakan pratinjau publik tanpa data privat dan dengan pengungkapan status integrasi. Aksi penyimpanan dan login nonaktif; input form baru dan rancangan checklist hanya state lokal yang hilang saat keluar halaman. Profil pratinjau tidak menampilkan identitas atau role sebelum sesi tersedia. Jangan memasukkan data sensitif pada pratinjau. Provider PostgreSQL, strategi autentikasi, kontrak API, serta aturan bisnis terbuka harus disepakati sebelum integrasi.
 
