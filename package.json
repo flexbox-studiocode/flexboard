@@ -11,11 +11,15 @@
     "test": "vitest run",
     "test:browser": "playwright test",
     "test:watch": "vitest",
-    "test:node": "node --test tests/node/*.test.js"
+    "test:node": "node --env-file=.env --test tests/node/*.test.js",
+    "db:migrate": "node --env-file=.env scripts/db.mjs migrate",
+    "db:migrate:status": "node --env-file=.env scripts/db.mjs status",
+    "db:seed": "node --env-file=.env scripts/db.mjs seed"
   },
   "dependencies": {
     "@vitejs/plugin-react": "4.3.4",
     "lucide-react": "latest",
+    "pg": "^8.23.1",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "6.30.6",
