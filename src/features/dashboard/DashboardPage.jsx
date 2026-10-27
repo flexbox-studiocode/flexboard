@@ -1,11 +1,13 @@
 import { CheckCheck, ClipboardList, Clock3, FolderKanban } from 'lucide-react'
 import { PageHeader, Panel, UnavailableState } from '../../components/ui/index.js'
 import { DataNotice, MetricCard, SectionHeading } from '../common/FeatureUI.jsx'
+import ProjectPicker from '../projects/ProjectPicker.jsx'
 import './dashboard.css'
 
 export default function DashboardPage() {
   return <div className="feature-page dashboard-page">
     <PageHeader eyebrow="WORKSPACE OVERVIEW" title="Beranda" description="Ruang untuk melihat pekerjaan, prioritas, dan perkembangan tim." />
+    <ProjectPicker />
     <section className="feature-stats" aria-label="Ringkasan workspace">
       <MetricCard label="Tugas aktif" icon={ClipboardList} />
       <MetricCard label="Tugas selesai" icon={CheckCheck} tone="green" />

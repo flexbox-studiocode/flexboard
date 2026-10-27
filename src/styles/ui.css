@@ -18,9 +18,9 @@
 .checkbox-field { display: flex; align-items: flex-start; gap: .75rem; }
 .checkbox-field input { accent-color: var(--color-primary-dark); width: 20px; height: 20px; margin: .1rem 0; flex-shrink: 0; }
 .checkbox-field label { font-size: .9rem; }
-.search-field { position: relative; }
-.search-field > svg { position: absolute; left: .9rem; bottom: 14px; color: var(--color-muted); pointer-events: none; }
-.search-field input { padding-left: 2.65rem; }
+.field__control { position: relative; min-width: 0; }
+.field__leading-icon { position: absolute; inset-inline-start: .9rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center; color: var(--color-muted); pointer-events: none; }
+.field .field__control--leading-icon input { padding-inline-start: 2.65rem; }
 .badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: .25rem; padding: .3rem .6rem; background: #edf0f4; color: #465261; font-size: .68rem; font-weight: 700; }
 .badge--info { color: #255b91; background: #e2edfa; }
 .badge--success { color: var(--color-success); background: #e8f5ed; }

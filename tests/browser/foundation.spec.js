@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const routes = ['/', '/tasks', '/tasks/new', '/tasks/unavailable', '/tasks/unavailable/edit', '/team-progress', '/members', '/activity', '/login']
-for (const width of [360, 390, 768, 1024, 1440]) {
+for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
   test(`seluruh halaman tanpa overflow pada ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     const errors = []
@@ -14,6 +14,16 @@ for (const width of [360, 390, 768, 1024, 1440]) {
       await expect(page.locator('.brand img')).toBeVisible()
       expect(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true)
+      const collisions = await page.locator('.feature-metric').evaluateAll(cards => cards.flatMap(card => {
+        const label = card.querySelector('.feature-metric-top > span').getBoundingClientRect()
+        const icon = card.querySelector('.feature-metric-icon').getBoundingClientRect()
+        const bounds = card.getBoundingClientRect()
+        return label.right > icon.left || icon.right > bounds.right || label.left < bounds.left ? [card.textContent] : []
+      }))
+      expect(collisions, `${route}: label/ikon ringkasan`).toEqual([])
+      for (const input of await page.locator('input[type="datetime-local"]').all()) {
+        expect(await input.evaluate(element => element.scrollWidth <= element.clientWidth + 1), `${route}: field tanggal`).toBe(true)
+      }
     }
     expect(errors).toEqual([])
     expect(apiRequests).toEqual([])
@@ -77,6 +87,125 @@ test('checklist baru hanya rancangan input lokal', async ({ page }) => {
   await page.reload()
   await expect(page.getByLabel('Item checklist 1', { exact: true })).toHaveCount(0)
 })
+
+test('pratinjau proyek membuang rancangan dan tidak memberikan izin mutasi', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+  await trigger.click()
+  let dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+  await expect(dialog).toBeVisible()
+  await dialog.getByLabel('Nama proyek').fill('Input lokal pengguna')
+  await expect(dialog.getByRole('button', { name: 'Simpan proyek' })).toBeDisabled()
+  await expect(dialog.getByLabel('Status proyek')).toBeDisabled()
+  await dialog.getByRole('button', { name: 'Tutup', exact: true }).click()
+  await expect(trigger).toBeFocused()
+  await trigger.click()
+  await expect(dialog.getByLabel('Nama proyek')).toHaveValue('')
+  await page.keyboard.press('Escape')
+  await page.getByText('Pratinjau struktur pengelolaan', { exact: true }).click()
+  await page.getByRole('button', { name: 'Pratinjau edit proyek', exact: true }).click()
+  dialog = page.getByRole('dialog', { name: /edit proyek/i })
+  await expect(dialog.getByLabel('Nama proyek')).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Pratinjau konfirmasi arsip', exact: true }).click()
+  dialog = page.getByRole('dialog', { name: 'Pratinjau konfirmasi arsip proyek' })
+  await expect(dialog.getByRole('button', { name: 'Arsipkan proyek' })).toBeDisabled()
+  await page.keyboard.press('Escape')
+})
+
+test('pratinjau pengelolaan akun tidak memilih role atau status', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/members')
+  const trigger = page.getByRole('button', { name: 'Pratinjau pengelolaan akun' })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Pratinjau pengelolaan akun' })
+  await expect(dialog).toBeVisible()
+  for (const select of await dialog.getByRole('combobox').all()) {
+    await expect(select).toBeDisabled()
+    await expect(select).toHaveValue('')
+  }
+  await expect(dialog.getByRole('button', { name: /Simpan/ })).toBeDisabled()
+  for (let index = 0; index < 6; index++) {
+    await page.keyboard.press('Tab')
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
+  }
+  await page.keyboard.press('Escape')
+  await expect(trigger).toBeFocused()
+})
+
+test('dialog proyek mobile dapat digulir sampai aksi dan menahan fokus', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+  await dialog.getByLabel('Deskripsi proyek').fill('Input lokal panjang. '.repeat(80))
+  expect(await dialog.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true)
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
+  for (const key of ['Tab', 'Shift+Tab', 'Tab', 'Tab']) {
+    await page.keyboard.press(key)
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
+  }
+  const close = dialog.getByRole('button', { name: 'Tutup', exact: true })
+  await close.scrollIntoViewIfNeeded()
+  await expect(close).toBeInViewport()
+  expect(await dialog.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+  await close.click()
+  await expect(trigger).toBeFocused()
+})
+
+test('referensi detail panjang tidak mengarang data atau meluapkan layar', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  const reference = 'referensi-lokal-'.repeat(30)
+  await page.goto(`/tasks/${reference}`)
+  await expect(page.locator('.task-reference code')).toHaveText(reference)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+  for (const name of ['Edit tugas', 'Arsipkan tugas', 'Tambah checklist']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
+  }
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  await expect(page.getByRole('checkbox')).toHaveCount(0)
+})
+
+for (const width of [320, 360, 390, 768, 1024, 1440, 1920]) {
+  test(`ikon dan tombol pencarian tidak menimpa teks pada ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    for (const route of ['/tasks', '/team-progress', '/members', '/activity']) {
+      await page.goto(route)
+      await page.evaluate(() => document.fonts.ready)
+      const input = page.getByRole('searchbox', { name: 'Pencarian' })
+      for (const value of ['', 'Input lokal panjang '.repeat(30)]) {
+        await input.fill(value)
+        const geometry = await input.evaluate(element => {
+          const bounds = element.getBoundingClientRect()
+          const style = getComputedStyle(element)
+          const icon = element.parentElement.querySelector('.field__leading-icon').getBoundingClientRect()
+          return {
+            textStart: bounds.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
+            iconEnd: icon.right,
+            centerOffset: Math.abs((bounds.top + bounds.bottom - icon.top - icon.bottom) / 2),
+            iconInside: icon.left >= bounds.left && icon.bottom <= bounds.bottom && icon.top >= bounds.top,
+          }
+        })
+        expect(geometry.textStart - geometry.iconEnd, `${route}: jarak ikon–teks`).toBeGreaterThanOrEqual(8)
+        expect(geometry.centerOffset, `${route}: ikon di tengah kontrol`).toBeLessThanOrEqual(1)
+        expect(geometry.iconInside, route).toBe(true)
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), route).toBe(true)
+    }
+    await page.goto('/')
+    const bannerInput = page.getByLabel('Cari tugas berdasarkan judul atau deskripsi')
+    await bannerInput.fill('Input lokal panjang '.repeat(30))
+    const gap = await bannerInput.evaluate(element => {
+      const bounds = element.getBoundingClientRect()
+      const style = getComputedStyle(element)
+      const button = element.form.querySelector('button').getBoundingClientRect()
+      return button.left - (bounds.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight))
+    })
+    expect(gap, 'ruang teks sebelum tombol pencarian banner').toBeGreaterThanOrEqual(12)
+  })
+}
 
 test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
   await page.goto('/')
