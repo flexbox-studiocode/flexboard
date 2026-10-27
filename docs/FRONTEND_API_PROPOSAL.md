@@ -2,6 +2,7 @@
 
 Status: **PROPOSED — belum disepakati Kiandra/pemilik produk**.
 Dokumen ini bukan bukti endpoint tersedia. Implementasi saat ini tidak memanggil endpoint domain di bawah.
+Matriks halaman/aksi, kebutuhan payload, dan pertanyaan handoff backend: [FRONTEND_INTEGRATION_MATRIX.md](FRONTEND_INTEGRATION_MATRIX.md). Pekerjaan integrasi dibatasi pada frontend; kekurangan endpoint tidak ditutup dengan perubahan backend/database.
 
 ## Kontrak yang tersedia
 
@@ -28,7 +29,7 @@ Belum tersedia URL development, kontrak autentikasi, atau API domain.
 | Checklist | POST /api/tasks/:id/checklists | Item aktif |
 | Update checklist | PATCH /api/checklists/:id | Status/judul/urutan menurut izin |
 | Arsip checklist | Belum ditentukan | Jangan menebak penghapusan permanen |
-| Laporan | GET/POST /api/tasks/:id/updates | Cakupan MVP belum diputuskan |
+| Laporan | GET/POST /api/tasks/:id/updates | Kebutuhan laporan/kendala mengikuti PRD; bentuk, histori, dan kontrak belum final |
 | Update laporan | PATCH /api/task-updates/:id | Ownership ditentukan server |
 | Progres tim | GET /api/progress/team | Nilai, cakupan, status agregasi |
 | Tugas pembentuk progres | GET /api/tasks dengan filter anggota/proyek atau endpoint khusus | Pilih satu kontrak bersama |

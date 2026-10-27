@@ -48,7 +48,9 @@ Logo diekspor dari Figma ke src/assets/brand/flexbox.png; aset asal .flexboard t
 Figma menunjukkan input progres manual dan persentase rata-rata; PRD tetap otoritatif: progres berasal dari checklist/bobot server. Upload tetap tahap lanjutan. Panel dan layout ditambah untuk field PRD; bukan klaim pixel-perfect terhadap layar berdata contoh.
 Font melalui Google Fonts dengan fallback sistem; hosting font lokal belum diterapkan. Footer mengikuti teks Figma dan perlu konfirmasi kepemilikan.
 
-## Keputusan produk — semua PROPOSED, belum AGREED
+## Usulan keputusan produk — belum AGREED
+
+Ketentuan dasar PRD tetap berlaku, termasuk progres checklist/agregasi berbobot, bobot positif, tugas dihitung sekali per proyek, dan laporan/kendala pada tugas yang diizinkan. Tabel berikut memuat usulan rincian yang belum disepakati; bukan penundaan kewajiban PRD.
 
 | Topik | Rekomendasi | Dampak |
 |---|---|---|
@@ -57,14 +59,18 @@ Font melalui Google Fonts dengan fallback sistem; hosting font lokal belum diter
 | Review | Tunda approval ke tahap lanjutan | in_review dan transisi done belum dipilih |
 | Cakupan progres | Tugas nonarsip dalam proyek terpilih, termasuk selesai | Label cakupan dan agregasi |
 | Tanpa checklist | Progres null; usulan dikecualikan agregasi dengan jumlah pengecualian | Seluruh tugas belum diatur perlu state eksplisit |
-| Multi-assignee | Hitung penuh per anggota, sekali per proyek | Penjelasan kontribusi |
-| Bobot | Usulan default 1, wajib positif | Form saat ini tidak mengasumsikan default |
+| Multi-assignee | Usulan hitung penuh per anggota; sekali per proyek sudah diwajibkan PRD | Penjelasan kontribusi |
+| Bobot | Usulan default 1; bobot positif sudah diwajibkan PRD | Form saat ini tidak mengasumsikan default |
 | Waktu | Usulan UTC server, Asia/Jakarta untuk UI | Input/display/overdue belum final |
-| Laporan/kendala | Ringkasan per anggota per tugas dalam MVP | Komentar diskusi/upload ditunda |
+| Laporan/kendala | Usulan bentuk satu ringkasan per anggota per tugas; kebutuhan laporan/kendala mengikuti PRD | Struktur/history/ownership menunggu kontrak; komentar diskusi/upload ditunda |
 | Arsip | Soft archive, tidak delete permanen | Konfirmasi dan histori |
 | Akun/profil | Provisioning admin, capabilities server | Login identifier, role/status dan profil |
 
-Kontrak endpoint dan payload: lihat FRONTEND_API_PROPOSAL.md. Implementasi integrasi harus menunggu persetujuan, tidak mengunci usulan menjadi keputusan.
+Kontrak endpoint dan payload: lihat FRONTEND_API_PROPOSAL.md. Matriks kebutuhan setiap halaman dan pertanyaan untuk backend: [FRONTEND_INTEGRATION_MATRIX.md](FRONTEND_INTEGRATION_MATRIX.md). Implementasi integrasi harus menunggu persetujuan, tidak mengunci usulan menjadi keputusan.
+
+### Batas tanggung jawab frontend
+
+Pekerjaan berikutnya hanya frontend: komponen/halaman/CSS, validasi UX, client/adapter setelah kontrak disetujui, state sesi/navigasi, feedback dan tes. Endpoint server, middleware, migration, skema, seed, isi database, serta dependency backend tidak diubah untuk menutup blocker integrasi. Route guard frontend hanya mengatur navigasi, bukan pengganti otorisasi server. Setup `.env`/`pg` dan suite database dilaporkan terpisah, bukan target penyelesaian frontend.
 
 ## Validasi dan batasannya
 
@@ -108,6 +114,19 @@ Branch `feat/visual-refinement` mempertahankan baseline lokal `ae939fa`, termasu
 ## Konsistensi kontrol filter
 
 Perbaikan `fix/consistent-field-controls` menyamakan tinggi/font/padding select dan tanggal pada Tugas, Progres Tim, Aktivitas dan Anggota. Chevron single-select diposisikan 16 px dari tepi dengan ruang teks 48 px; multiple/listbox tetap tanpa chevron. Perilaku native, disabled, label, validasi dan reset dipertahankan. Rincian: `FIELD_CONTROLS.md`.
+
+## Aksesibilitas dan ketahanan pratinjau
+
+Paket `fix/frontend-preview-accessibility` berangkat dari `b5a736b` (merge PR #6 yang sudah ada; isi file sama dengan `3f03a3e`). Working tree awal bersih. Tidak membuat merge baru atau mengubah backend/database/dependensi.
+
+- Draft checklist mengatur fokus setelah tambah/hapus: input baru, item berikutnya, sebelumnya, atau tombol tambah bila kosong. State tetap lokal dan dibuang saat keluar/referensi route berubah.
+- Login memfokuskan konten utama tanpa memaksa scroll; skip link dan navigasi desktop/mobile diuji. Login tetap disabled tanpa simulasi sesi.
+- Filter tanggal memvalidasi format kalender lokal, leap year, dan parameter berulang. URL rusak dipertahankan sampai pengguna memperbaiki atau reset; input tanggal invalid tampil kosong dengan error aksesibel, bukan hasil kosong atau tanggal yang dinormalisasi diam-diam. `min` hanya memakai tanggal mulai valid. Ini bukan kontrak query API atau keputusan timezone.
+- Tes presentasi checklist mencakup read-only, callback, saving per item/tambah, dan progres yang hanya berubah melalui props; tidak menghitung progres domain.
+- Tidak ada perubahan CSS/aset/desain, endpoint domain, mutasi aktif, akun demo, mock jaringan, atau data produksi buatan. Matriks integrasi mencatat kebutuhan, bukan kontrak baru.
+- Lint lulus; `npm test` 111 tes frontend dalam 15 file lulus (komponen dan helper tanggal); tiga tes konfigurasi deployment lulus; production build lulus. Suite database tidak dijalankan dan bukan bukti penerimaan frontend.
+- Pengujian browser awal berhenti pada batas waktu proses 120 detik, bukan assertion gagal; pengulangan dengan batas lebih panjang meluluskan 53 tes. Dua tes tambahan native date-input pada 320 px juga lulus terpisah. Validasi akhir seluruh suite setelah tambahan tes: **55 tes Chromium lulus** (4,2 menit), termasuk regresi 43 tes sebelumnya dan 12 tes baru.
+- Screenshot Login pada 390/1440 px dan form tugas mobile diperiksa; tidak ada perubahan CSS/layout. Tes geometri/warna/font/regresi tetap dipertahankan, bukan screenshot-diff Figma atau verifikasi API/runtime Vercel.
 
 ## Git
 
