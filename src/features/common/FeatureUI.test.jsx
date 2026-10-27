@@ -112,6 +112,47 @@ describe('Validasi lokal rentang tanggal FilterToolbar', () => {
     expect(screen.getByRole('button', { name: 'Reset filter' })).toBeDisabled()
   })
 
+  it.each(['teks', '2026-02-30', '2026-2-01'])('menampilkan error untuk %s tanpa membuang URL dan dapat diperbaiki', value => {
+    renderToolbar(`?from=${value}&to=2026-03-01&view=list`)
+    const from = screen.getByLabelText('Dari tanggal')
+    const to = screen.getByLabelText('Sampai tanggal')
+    expect(from).toHaveValue('')
+    expect(from).toHaveAttribute('aria-invalid', 'true')
+    expect(from).toHaveAccessibleDescription(expect.stringContaining('Tanggal pada URL tidak valid'))
+    expect(to).not.toHaveAttribute('aria-invalid')
+    expect(to).not.toHaveAttribute('min')
+    expect(currentParams().get('from')).toBe(value)
+    expect(screen.getByRole('status')).toHaveTextContent('Filter tidak valid.')
+
+    fireEvent.change(from, { target: { value: '2026-02-28' } })
+    expectValidRange()
+    expect(to).toHaveAttribute('min', '2026-02-28')
+    expect(currentParams().get('from')).toBe('2026-02-28')
+    expect(currentParams().get('view')).toBe('list')
+  })
+
+  it('menandai parameter tanggal berulang dan menggantinya hanya saat pengguna memilih tanggal', () => {
+    renderToolbar('?from=2026-01-01&from=2026-01-02&to=invalid&view=list')
+    const from = screen.getByLabelText('Dari tanggal')
+    expect(from).toHaveValue('')
+    expect(from).toHaveAccessibleDescription(expect.stringContaining('Parameter tanggal berulang'))
+    expect(currentParams().getAll('from')).toEqual(['2026-01-01', '2026-01-02'])
+    expect(screen.getByLabelText('Sampai tanggal')).toHaveAttribute('aria-invalid', 'true')
+    fireEvent.change(from, { target: { value: '2026-01-03' } })
+    expect(from).not.toHaveAttribute('aria-invalid')
+    expect(currentParams().getAll('from')).toEqual(['2026-01-03'])
+    expect(currentParams().get('to')).toBe('invalid')
+    expect(screen.getByRole('status')).toHaveTextContent('Filter tidak valid.')
+  })
+
+  it('reset membersihkan tanggal malformed dan duplikat tetapi mempertahankan query lain', async () => {
+    renderToolbar('?from=invalid&to=2026-02-30&to=&view=list')
+    await userEvent.click(screen.getByRole('button', { name: 'Reset filter' }))
+    expectValidRange()
+    expect([...currentParams()]).toEqual([['view', 'list']])
+    expect(screen.getByRole('button', { name: 'Reset filter' })).toBeDisabled()
+  })
+
   it('tidak memvalidasi rentang ketika input tanggal tidak ditampilkan', () => {
     renderToolbar('?from=2026-02-20&to=2026-02-10', { dates: false })
 
