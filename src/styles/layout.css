@@ -29,7 +29,7 @@
 .welcome-banner h2 { font-family: var(--font-display); font-size: clamp(1.8rem, 4.45vw, var(--font-size-page)); font-weight: 700; line-height: 1.09375; margin: 0; }
 .welcome-cursor { color: var(--color-ink); }
 .banner-search { display: flex; position: relative; margin-left: auto; width: min(34%, 350px); min-width: 220px; --search-button-width: 54px; }
-.banner-search input { padding: .95rem calc(var(--search-button-width) + 1rem) .95rem 1rem; border: 1px solid transparent; border-radius: .4rem; width: 100%; min-width: 0; font-family: 'Orbitron', var(--font-display); font-size: .8rem; background: #fff; color: var(--color-ink); }
+.banner-search input { padding: .95rem calc(var(--search-button-width) + 1rem) .95rem 1rem; border: 1px solid transparent; border-radius: .4rem; width: 100%; min-width: 0; font-family: 'Orbitron', var(--font-display); font-size: .8rem; font-weight: 700; background: #fff; color: var(--color-ink); }
 .banner-search::before, .banner-search::after { content: ''; position: absolute; width: 28px; height: 28px; border: 2px solid var(--color-ink); pointer-events: none; }
 .banner-search::before { left: -12px; top: -12px; border-right: 0; border-bottom: 0; }
 .banner-search::after { right: -12px; bottom: -12px; border-left: 0; border-top: 0; }
