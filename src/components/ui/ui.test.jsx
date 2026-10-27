@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { Button, Input, Checkbox, ProgressBar, UnavailableState, EmptyState } from './index.js'
+import { Button, Input, SearchField, Checkbox, ProgressBar, UnavailableState, EmptyState } from './index.js'
 
 describe('Komponen UI tanpa data domain atau mock API', () => {
   it('memberi tipe button dan mencegah klik ketika loading', async () => {
@@ -22,6 +22,17 @@ describe('Komponen UI tanpa data domain atau mock API', () => {
     const input = screen.getByLabelText('Judul')
     expect(input).toHaveAccessibleDescription('Wajib diisi Judul diperlukan')
     expect(input).toHaveAttribute('aria-invalid', 'true')
+  })
+  it('pencarian menempatkan ikon di kontrol, terpisah dari label, petunjuk, dan error', async () => {
+    render(<SearchField label="Pencarian lokal" hint="Petunjuk pencarian" error="Periksa input" />)
+    const input = screen.getByRole('searchbox', { name: 'Pencarian lokal' })
+    expect(input).toHaveAccessibleDescription('Petunjuk pencarian Periksa input')
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+    const control = input.closest('.field__control--leading-icon')
+    expect(control.querySelector('.field__leading-icon')).toHaveAttribute('aria-hidden', 'true')
+    expect(control.querySelector('label, small')).toBeNull()
+    await userEvent.type(input, 'Input lokal')
+    expect(input).toHaveValue('Input lokal')
   })
   it('checkbox dapat digunakan dengan label', async () => {
     render(<Checkbox label="Pilihan" />)

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const routes = ['/', '/tasks', '/tasks/new', '/tasks/unavailable', '/tasks/unavailable/edit', '/team-progress', '/members', '/activity', '/login']
-for (const width of [360, 390, 768, 1024, 1440]) {
+for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
   test(`seluruh halaman tanpa overflow pada ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     const errors = []
@@ -14,6 +14,16 @@ for (const width of [360, 390, 768, 1024, 1440]) {
       await expect(page.locator('.brand img')).toBeVisible()
       expect(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true)
+      const collisions = await page.locator('.feature-metric').evaluateAll(cards => cards.flatMap(card => {
+        const label = card.querySelector('.feature-metric-top > span').getBoundingClientRect()
+        const icon = card.querySelector('.feature-metric-icon').getBoundingClientRect()
+        const bounds = card.getBoundingClientRect()
+        return label.right > icon.left || icon.right > bounds.right || label.left < bounds.left ? [card.textContent] : []
+      }))
+      expect(collisions, `${route}: label/ikon ringkasan`).toEqual([])
+      for (const input of await page.locator('input[type="datetime-local"]').all()) {
+        expect(await input.evaluate(element => element.scrollWidth <= element.clientWidth + 1), `${route}: field tanggal`).toBe(true)
+      }
     }
     expect(errors).toEqual([])
     expect(apiRequests).toEqual([])
@@ -158,14 +168,44 @@ test('referensi detail panjang tidak mengarang data atau meluapkan layar', async
   await expect(page.getByRole('checkbox')).toHaveCount(0)
 })
 
-test('ikon pencarian tidak bertumpuk dengan input', async ({ page }) => {
-  await page.goto('/tasks')
-  const input = page.getByRole('searchbox', { name: 'Pencarian' })
-  const padding = await input.evaluate(element => parseFloat(getComputedStyle(element).paddingLeft))
-  const icon = await page.locator('.feature-filter-search > svg').boundingBox()
-  const bounds = await input.boundingBox()
-  expect(bounds.x + padding).toBeGreaterThan(icon.x + icon.width)
-})
+for (const width of [320, 360, 390, 768, 1024, 1440, 1920]) {
+  test(`ikon dan tombol pencarian tidak menimpa teks pada ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    for (const route of ['/tasks', '/team-progress', '/members', '/activity']) {
+      await page.goto(route)
+      await page.evaluate(() => document.fonts.ready)
+      const input = page.getByRole('searchbox', { name: 'Pencarian' })
+      for (const value of ['', 'Input lokal panjang '.repeat(30)]) {
+        await input.fill(value)
+        const geometry = await input.evaluate(element => {
+          const bounds = element.getBoundingClientRect()
+          const style = getComputedStyle(element)
+          const icon = element.parentElement.querySelector('.field__leading-icon').getBoundingClientRect()
+          return {
+            textStart: bounds.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
+            iconEnd: icon.right,
+            centerOffset: Math.abs((bounds.top + bounds.bottom - icon.top - icon.bottom) / 2),
+            iconInside: icon.left >= bounds.left && icon.bottom <= bounds.bottom && icon.top >= bounds.top,
+          }
+        })
+        expect(geometry.textStart - geometry.iconEnd, `${route}: jarak ikon–teks`).toBeGreaterThanOrEqual(8)
+        expect(geometry.centerOffset, `${route}: ikon di tengah kontrol`).toBeLessThanOrEqual(1)
+        expect(geometry.iconInside, route).toBe(true)
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), route).toBe(true)
+    }
+    await page.goto('/')
+    const bannerInput = page.getByLabel('Cari tugas berdasarkan judul atau deskripsi')
+    await bannerInput.fill('Input lokal panjang '.repeat(30))
+    const gap = await bannerInput.evaluate(element => {
+      const bounds = element.getBoundingClientRect()
+      const style = getComputedStyle(element)
+      const button = element.form.querySelector('button').getBoundingClientRect()
+      return button.left - (bounds.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight))
+    })
+    expect(gap, 'ruang teks sebelum tombol pencarian banner').toBeGreaterThanOrEqual(12)
+  })
+}
 
 test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
   await page.goto('/')

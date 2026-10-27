@@ -69,13 +69,13 @@ Kontrak endpoint dan payload: lihat FRONTEND_API_PROPOSAL.md. Implementasi integ
 ## Validasi dan batasannya
 
 - Baseline sebelum perubahan: lint/build lulus, 0 tes.
-- Validasi akhir kode: `npm run lint` lulus, `npm test` 65 tes lulus, `npm run test:browser` 17 tes lulus, `npm run test:node` 3 tes konfigurasi lulus, dan `npm run build` lulus.
+- Validasi akhir kode: `npm run lint` lulus, `npm test` 66 tes lulus, `npm run test:browser` 27 tes lulus, `npm run test:node` 3 tes konfigurasi lulus, dan `npm run build` lulus.
 - Tes unit/komponen menggunakan props generik dan interaksi lokal; tidak memakai mock API/domain.
-- Playwright Chromium memeriksa seluruh sembilan route pada 360/390/768/1024/1440 px: heading, logo terisi, tanpa overflow, tanpa exception browser, tanpa request /api domain.
+- Playwright Chromium memeriksa seluruh sembilan route pada 320/360/390/601/768/1001/1024/1440/1920 px: heading, logo terisi, tanpa overflow, tanpa exception browser, tanpa request /api domain.
 - Tes menu: fokus tetap di dialog, Escape, kembali ke trigger, navigasi.
 - Tes pencarian/reset URL dan kontrol login/simpan disabled.
 - Tes pratinjau proyek/akun memeriksa kontrol nonaktif, fokus/Escape, dan rancangan yang dibuang. Dialog proyek pada 360×640 dapat digulir hingga tombol penutup; teks lokal panjang tidak meluapkan dialog.
-- Referensi URL detail yang panjang tetap membungkus pada 360 px; tidak ada checkbox/progres atau izin mutasi buatan. Tes geometri memastikan ikon pencarian tidak menimpa area teks input.
+- Referensi URL detail yang panjang tetap membungkus pada 360 px; tidak ada checkbox/progres atau izin mutasi buatan. Tes geometri memastikan ikon pencarian tidak menimpa area teks input di Tugas, Progres Tim, Anggota, dan Aktivitas pada 320/360/390/768/1024/1440/1920 px, dengan input kosong dan teks panjang. Posisi ikon mengikuti kontrol input, bukan label/petunjuk/error; toolbar memakai SearchField bersama. Ruang teks banner mengikuti lebar tombol melalui satu variabel CSS. Label/ikon ringkasan dan overflow input datetime juga diperiksa pada sembilan ukuran layar.
 - Desktop/mobile diperiksa melalui screenshot lokal, termasuk tujuh halaman implementasi, Anggota, form checklist, dialog profil, dan dialog proyek. Tidak ada screenshot-diff otomatis atau pengujian lintas browser selain Chromium.
 - vercel.json menyiapkan filesystem-first routing: function/file yang tersedia diprioritaskan, /api yang tidak tersedia menghasilkan 404, lalu deep link frontend diarahkan ke index.html. Tes Node memeriksa konfigurasi, bukan runtime Vercel. Tidak ada deployment Vercel atau pengujian PostgreSQL/akun nyata.
 - Audit setelah pembaruan Vite 6.4.5 dan Router 6.30.6: 2 moderate, 0 high/critical. Keduanya terkait React Router; npm menyarankan major 7.18.4. Tidak dilakukan migrasi major sepihak. Route aplikasi tidak menerima tujuan eksternal dinamis, dan aplikasi tidak memakai SSR hydration; audit tetap belum bersih dan perlu evaluasi sebelum produksi.
