@@ -6,10 +6,11 @@
 .auth-card > p { font-size: .85rem; }
 .auth-form { display: grid; gap: 1.6rem; margin: 2rem 0; }
 .auth-form .field > label { color: var(--color-primary-dark); }
-.auth-form input { min-height: 54px; }
+.auth-form .field input { min-height: 54px; }
 .auth-form .button { width: 100%; margin-top: .5rem; min-height: 52px; }
 .auth-status { border-top: 1px solid var(--color-border); padding-top: 1.2rem; font-size: .8rem; }
 .auth-status p { color: var(--color-muted); line-height: 1.9; }
 .auth-preview-link { display: block; margin-top: 1.4rem; font-size: .85rem; font-weight: 700; text-align: center; }
 .auth-note { text-align: center; color: var(--color-muted); font-size: .7rem !important; }
+@media (min-width: 1200px) { .auth-main { padding-block: 7.5rem; } .auth-card { width: min(914px, 100%); padding: 3rem 4.8rem; } .auth-card::before { inset: -30px 50px; } .auth-watermark { width: min(1036px, 94%); } .auth-form { gap: 2.5rem; margin-block: 3rem; } .auth-form .field > label { font-family: var(--font-display); font-size: 1.35rem; } .auth-form .field input { min-height: 74px; padding-inline: 1.5rem; font-size: 1.1rem; } .auth-form .button { min-height: 68px; font-family: var(--font-display); font-size: 1.2rem; } }
 @media (max-width: 600px) { .auth-main { padding-block: 3rem; } }
