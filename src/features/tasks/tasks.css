@@ -60,7 +60,13 @@
 .tasks-page .page-header, .task-form-page .page-header, .task-detail-page .page-header { margin-bottom: .5rem; }
 .tasks-page .page-header { padding-bottom: 1.25rem; border-bottom: 3px solid var(--color-border); }
 .tasks-page .page-header__actions > .button { background: var(--color-primary); color: #fff; border-radius: 0; }
-.task-filters { padding-block: 1.25rem; }
+.tasks-page .task-filters { padding: 0; background: transparent; border: 0; }
+.task-filters .feature-filters { gap: .75rem; }
+.task-filters .field input, .task-filters .field select { min-height: 40px; padding-block: .5rem; }
+.task-filters .feature-filter-options { gap: .65rem; }
+.task-filters .feature-filter-label { display: none; }
+.task-filters .feature-filter-options > :not(.feature-filter-label):not(button) { min-width: 0; }
+.task-filters .feature-filter-search { max-width: 24rem; }
 .task-workspace { display: grid; gap: 1.75rem; min-width: 0; }
 .task-workspace__label { display: flex; align-items: center; gap: .65rem; width: fit-content; max-width: 100%; margin: 0; padding: .7rem 1rem; background: var(--color-ink); border: 1px solid var(--color-primary); color: #fff; font-family: var(--font-display); font-size: 1rem; }
 .tasks-page .task-summary { background: var(--color-ink); color: #fff; border-color: var(--color-primary); }
@@ -102,10 +108,9 @@
 .task-form-panel .task-form-actions .button--primary { background: var(--color-ink); }
 .task-report-surface { max-width: 62rem; margin: 2rem 0 0 auto; padding: clamp(1.25rem, 3vw, 2.5rem); color: #fff; background: var(--color-ink); }
 .task-report-surface .feature-section-heading { border-color: #ffffff45; }
-.task-report-surface .feature-section-heading p:not(.feature-eyebrow) { color: #dce3eb; }
+.task-detail-page .task-report-surface .feature-section-heading p:not(.feature-eyebrow) { color: #dce3eb; }
 .task-report-surface .state { min-height: 10rem; padding: 1.5rem; margin-bottom: 1.5rem; background: #fff; color: var(--color-ink); align-items: flex-start; text-align: left; }
 .task-report-surface .state__icon { display: none; }
 .task-report-actions { display: flex; justify-content: flex-end; }
 @media (max-width: 800px) { .task-form-hero-row { grid-template-columns: 1fr; gap: 1.2rem; } }
 @media (max-width: 600px) { .task-card-top, .task-members__heading { align-items: flex-start; flex-direction: column; } .task-report-surface { margin-top: 1.25rem; } .task-members::before { inset-inline: 10%; } }
-
