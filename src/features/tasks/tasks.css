@@ -86,7 +86,9 @@
 .task-members__heading p { margin: 0; color: var(--color-muted); font-size: var(--font-size-control); line-height: var(--line-height-copy); }
 .task-members > .task-members__heading h2 { padding: 0 .9375rem; color: #fff; background: var(--color-primary-dark); font-size: .9375rem; line-height: 1.8; }
 .task-card .feature-eyebrow { color: #dce3eb; }
+.task-card-top > .feature-eyebrow, .task-card-due { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .task-card-due { display: inline-flex; align-items: center; gap: .5rem; font-size: var(--font-size-control); }
+.task-card-due svg { flex-shrink: 0; }
 .task-card-description { max-width: 60rem; font-size: var(--font-size-control); line-height: 1.25; }
 .task-card-labels { display: flex; flex-wrap: wrap; gap: .5rem; }
 .task-card-footer { border-color: #ffffff45; }
