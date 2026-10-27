@@ -6,5 +6,21 @@
 .members-access-note > div { flex: 1; }
 .members-access-note h2 { font-family: var(--font-display); font-size: .9rem; color: var(--color-ink); margin: 0 0 .4rem; }
 .members-access-note p { margin: 0; font-size: .75rem; line-height: 1.7; }
+.member-card { min-width: 0; padding: 1.25rem; }
+.member-card__heading { display: flex; align-items: center; gap: .85rem; }
+.member-card__heading > div { min-width: 0; }
+.member-card__heading h3 { margin: 0; font-family: var(--font-display); font-size: 1rem; overflow-wrap: anywhere; }
+.member-card__heading p { margin: .35rem 0 0; color: var(--color-muted); font-size: .8rem; overflow-wrap: anywhere; }
+.member-card__details { display: grid; gap: .8rem; margin: 1.25rem 0; }
+.member-card__details > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.member-card__details dt { color: var(--color-muted); font-size: .8rem; }
+.member-card__details dd { margin: 0; min-width: 0; text-align: right; overflow-wrap: anywhere; }
+.member-card__details .badge { white-space: normal; overflow-wrap: anywhere; }
+.account-management-notice { display: flex; align-items: flex-start; gap: .75rem; margin: 0 0 1.5rem; color: var(--color-muted); font-size: .85rem; line-height: 1.7; }
+.account-management-notice > svg { flex-shrink: 0; margin-top: .15rem; color: var(--color-primary); }
+.account-management-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.account-management-fields .field { min-width: 0; }
+.account-management-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; }
+@media (max-width: 600px) { .account-management-fields { grid-template-columns: minmax(0, 1fr); } .account-management-actions { flex-direction: column-reverse; } .account-management-actions .button { width: 100%; } .members-access-note > div { min-width: 0; } }
 @media (max-width: 1000px) { .members-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .members-summary .feature-data-notice { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .members-access-note { flex-wrap: wrap; } .members-access-note > button { width: 100%; } }
