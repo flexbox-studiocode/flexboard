@@ -2,6 +2,8 @@
 
 Status: **AUTH TERSEDIA — kontrak domain lain tetap proposed**.
 Endpoint auth di bawah telah dibuat sebagai Vercel serverless handler. Endpoint domain lainnya belum tersedia.
+Dokumen ini bukan bukti endpoint domain tersedia. Implementasi frontend saat ini tidak memanggil endpoint domain di bawah.
+Matriks halaman/aksi, kebutuhan payload, dan pertanyaan handoff backend: [FRONTEND_INTEGRATION_MATRIX.md](FRONTEND_INTEGRATION_MATRIX.md).
 
 ## Kontrak yang tersedia
 
@@ -49,7 +51,7 @@ Frontend harus mengirim `credentials: 'same-origin'`. API dan frontend lokal mem
 | Checklist | POST /api/tasks/:id/checklists | Item aktif |
 | Update checklist | PATCH /api/checklists/:id | Status/judul/urutan menurut izin |
 | Arsip checklist | Belum ditentukan | Jangan menebak penghapusan permanen |
-| Laporan | GET/POST /api/tasks/:id/updates | Cakupan MVP belum diputuskan |
+| Laporan | GET/POST /api/tasks/:id/updates | Kebutuhan laporan/kendala mengikuti PRD; bentuk, histori, dan kontrak belum final |
 | Update laporan | PATCH /api/task-updates/:id | Ownership ditentukan server |
 | Progres tim | GET /api/progress/team | Nilai, cakupan, status agregasi |
 | Tugas pembentuk progres | GET /api/tasks dengan filter anggota/proyek atau endpoint khusus | Pilih satu kontrak bersama |

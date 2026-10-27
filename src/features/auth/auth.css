@@ -2,20 +2,20 @@
 .auth-watermark { position: absolute; z-index: -1; width: min(1036px, 94%); opacity: .1; pointer-events: none; }
 .auth-card { position: relative; width: min(650px, 100%); padding: 2.75rem 3.5rem 1.75rem; background: var(--color-surface); border: 1px solid #87a9d2; border-radius: 0; }
 .auth-card::before { content: ''; position: absolute; inset: -22px 36px; background: var(--color-ink); z-index: -1; }
-.auth-card h1 { margin: 0 0 .5rem; font-family: var(--font-display); font-size: 2.25rem; font-weight: 600; line-height: 1.25; }
-.auth-card > .muted { margin: 0; font-size: .8rem; }
+.auth-card h1 { margin: 0 0 .75rem; font-family: var(--font-display); font-size: 2.25rem; font-weight: 600; line-height: 1.875rem; }
+.auth-card > .muted { margin: 0; font-family: var(--font-display); font-size: .8rem; line-height: 1.875rem; }
 .auth-form { display: grid; gap: 2.75rem; margin: 2.5rem 0 1.5rem; }
 .auth-form .field { gap: 1rem; }
-.auth-form .field > label { color: var(--color-primary-dark); font-size: 1.1rem; font-weight: 700; }
-.auth-form .field input { min-height: 54px; padding-inline: 1.5rem; border: 1px solid #87a9d2; border-radius: .5rem; font-family: var(--font-display); font-size: 1.1rem; background: var(--color-surface); }
+.auth-form .field > label { color: var(--color-primary-dark); font-size: 1.1rem; font-weight: 700; line-height: 1.875rem; }
+.auth-form .field input { min-height: 54px; padding-inline: 1.5rem; border: 1px solid #87a9d2; border-radius: .625rem; font-family: var(--font-display); font-size: 1.1rem; line-height: 1.875rem; background: var(--color-surface); }
 .auth-form .field input:disabled { opacity: 1; color: var(--color-muted); background: var(--color-surface); cursor: not-allowed; }
-.auth-form .button { width: 100%; margin-top: 1.5rem; min-height: 54px; border-radius: .5rem; font-family: var(--font-display); font-size: 1.1rem; }
+.auth-form .button { width: 100%; margin-top: 1.5rem; min-height: 54px; border-radius: .625rem; font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; line-height: 1.875rem; }
 .auth-form .button:disabled { opacity: .65; }
-.auth-help { margin: 1.5rem 0; color: var(--color-muted); font-size: .75rem; text-align: center; line-height: 1.9; }
-.auth-status { border-top: 1px solid #87909c; padding-top: 1.25rem; font-size: .75rem; }
+.auth-help { margin: 1.5rem 0; color: var(--color-muted); font-family: var(--font-display); font-size: .75rem; text-align: center; line-height: var(--line-height-copy); }
+.auth-status { border-top: 1px solid #87909c; padding-top: 1.25rem; font-family: var(--font-display); font-size: .75rem; }
 .auth-status strong { font-weight: 600; }
 .auth-status p { margin: .5rem 0 0; color: var(--color-muted); line-height: 1.8; }
 .auth-preview-link { display: block; margin-top: 1rem; font-size: .8rem; font-weight: 600; text-align: center; }
 .auth-note { margin: .5rem 0 0; text-align: center; color: var(--color-muted); font-size: .7rem; }
-@media (min-width: 1200px) { .auth-main { padding-block: 7.5rem; } .auth-card { width: min(915px, 100%); min-height: 962px; padding: 3rem 4.8rem 2rem; } .auth-card::before { inset: -30px 50px; } .auth-form { gap: 4rem; margin-top: 3.5rem; } .auth-form .field { gap: 1.5rem; } .auth-form .field > label { font-size: 1.5rem; } .auth-form .field input { min-height: 74px; padding-inline: 2.5rem; font-size: 1.5rem; } .auth-form .button { min-height: 74px; margin-top: 2.25rem; font-size: 1.5rem; } .auth-help { margin-block: 2rem; font-size: 1rem; } .auth-card > .muted { font-size: 1rem; } .auth-status { font-size: .9rem; } }
+@media (min-width: 1200px) { .auth-main { padding-block: 7.75rem; } .auth-card { width: min(915px, 100%); min-height: 962px; padding: 3.125rem 4.1875rem 2rem 4.875rem; } .auth-card::before { inset: -29px 53px -34px 50px; } .auth-form { gap: 3.875rem; margin-top: 2.75rem; } .auth-form .field { gap: 1.625rem; } .auth-form .field + .field { gap: 1.3125rem; } .auth-form .field > label { font-size: 1.5rem; } .auth-form .field input { min-height: 74px; padding-inline: 3.5625rem; font-size: 1.5rem; } .auth-form .button { min-height: 74px; margin-top: 2.375rem; font-size: 1.5rem; } .auth-help { margin-block: 2rem; font-size: var(--font-size-control); } .auth-card > .muted { font-size: var(--font-size-control); } .auth-status { font-size: var(--font-size-control); } }
 @media (max-width: 600px) { .auth-main { padding-block: 3rem; } .auth-card { padding: 2rem 1.25rem; } .auth-card::before { inset-inline: 20px; } .auth-card h1 { font-size: 1.8rem; } .auth-form { gap: 1.75rem; margin-top: 2rem; } .auth-form .button { margin-top: .5rem; font-size: 1rem; } .auth-form .field input { padding-inline: 1rem; font-size: 1rem; } }

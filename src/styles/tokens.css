@@ -15,6 +15,13 @@
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-display: 'Oxanium', system-ui, sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
+  --font-size-control: 1rem;
+  --font-size-section: 2.5rem;
+  --font-size-page: 4rem;
+  --line-height-copy: 1.875;
+  --panel-padding: 2.5rem;
+  --icon-size: 1.25rem;
+  --icon-stroke: 1.5;
   --radius-sm: 0.35rem;
   --radius-md: 0.65rem;
   --shadow-dialog: 0 20px 80px #17203324;

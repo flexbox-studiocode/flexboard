@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { CircleDashed, Menu, Search } from 'lucide-react'
+import { CircleDashed, Menu } from 'lucide-react'
 import { IconButton, Modal } from '../ui/index.js'
 import Brand from './Brand.jsx'
 import Footer from './Footer.jsx'
 import ProfileDialog from '../../features/members/ProfileDialog.jsx'
 import logo from '../../assets/brand/flexbox.png'
+import searchIcon from '../../assets/brand/banner-search.svg'
 
 const navigation = [['/', 'Beranda'], ['/tasks', 'Tugas Kami'], ['/team-progress', 'Progres Tim'], ['/members', 'Anggota'], ['/activity', 'Aktivitas']]
 
@@ -24,7 +25,7 @@ export function WelcomeBanner() {
   return <section className="welcome-banner" aria-label="Selamat datang">
     <div className="welcome-banner__brand"><img src={logo} alt="" width="94" height="98" /></div>
     <div className="welcome-banner__title"><h2>Selamat Datang<br />di FlexBoard<span className="welcome-cursor">_</span></h2></div>
-    <form className="banner-search" onSubmit={search}><label className="sr-only" htmlFor="workspace-search">Cari tugas berdasarkan judul atau deskripsi</label><input key={params.get('q') || ''} defaultValue={params.get('q') || ''} id="workspace-search" name="q" type="search" placeholder="Cari tugas…" maxLength={200} /><button type="submit" aria-label="Cari tugas"><Search size={27} aria-hidden="true" /></button></form>
+    <form className="banner-search" onSubmit={search}><label className="sr-only" htmlFor="workspace-search">Cari tugas berdasarkan judul atau deskripsi</label><input key={params.get('q') || ''} defaultValue={params.get('q') || ''} id="workspace-search" name="q" type="search" placeholder="Cari tugas…" maxLength={200} /><button type="submit" aria-label="Cari tugas"><img src={searchIcon} alt="" width="49" height="49" /></button></form>
   </section>
 }
 

@@ -17,6 +17,8 @@ describe('Team progress alignment', () => {
     expect(screen.getByRole('button', { name: 'Tambah tugas' })).toBeDisabled()
     expect(screen.getByRole('combobox', { name: 'Proyek' })).toBeDisabled()
     expect(screen.getByRole('combobox', { name: 'Anggota' })).toBeDisabled()
+    expect(screen.getByRole('searchbox', { name: 'Pencarian' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset filter' })).toBeDisabled()
     expect(screen.getByText(/Data yang belum tersedia bukan progres 0%/)).toBeInTheDocument()
   })
 
