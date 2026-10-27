@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import TasksPage from './TasksPage.jsx'
+import TaskCard from './TaskCard.jsx'
 
 const scope = '/tasks'
 const task = { id: 'test-task', title: 'Judul uji '.repeat(30), description: 'Deskripsi uji '.repeat(60), progress: 0 }
@@ -11,6 +12,31 @@ const resource = (status, extra = {}) => ({ status, scope, ...extra })
 function view(props = {}) {
   return <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={[scope]}><TasksPage {...props} /></MemoryRouter>
 }
+
+it('mempertahankan hierarki panel dan tautan pratinjau tanpa kartu contoh', () => {
+  render(view())
+  const summary = screen.getByRole('region', { name: 'Ringkasan tugas' })
+  const members = screen.getByRole('region', { name: 'Progres anggota' })
+  expect(summary).toHaveClass('task-summary')
+  expect(members).toHaveClass('task-members')
+  expect(summary.compareDocumentPosition(members) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(screen.getByRole('region', { name: 'Pencarian dan filter tugas' })).toBeVisible()
+  const addTask = screen.getByRole('link', { name: /Tambah tugas/ })
+  expect(addTask).toHaveAttribute('href', '/tasks/new')
+  expect(addTask.querySelector('svg')).toHaveAttribute('width', '20')
+  expect(addTask.querySelector('svg')).toHaveAttribute('stroke-width', '1.5')
+  expect(screen.queryByRole('article')).not.toBeInTheDocument()
+})
+
+it('kartu tugas tetap tidak memilih progres atau anggota bawaan', () => {
+  render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><TaskCard title="Judul dari adapter" description="Arahan dari adapter" /></MemoryRouter>)
+  expect(screen.getByRole('article')).toHaveClass('task-card')
+  expect(screen.getByRole('heading', { name: 'Judul dari adapter' })).toBeVisible()
+  expect(screen.getByText('Arahan dari adapter')).toBeVisible()
+  expect(screen.getByText('Progres belum tersedia')).toBeVisible()
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+  expect(screen.queryByRole('list')).not.toBeInTheDocument()
+})
 
 it('default tetap unavailable tanpa data, pagination, atau progres palsu', () => {
   render(view())
