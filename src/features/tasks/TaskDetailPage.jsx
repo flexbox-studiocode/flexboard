@@ -9,9 +9,9 @@ import './tasks.css'
 
 export default function TaskDetailPage() {
   const { id } = useParams()
-  return <div className="feature-page">
+  return <div className="feature-page task-detail-page">
     <Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} aria-hidden="true" />Kembali ke Tugas Kami</Link>
-    <PageHeader eyebrow="TASK DETAIL" title="Detail tugas" description="Informasi, checklist, dan perkembangan pekerjaan dalam satu tempat." actions={<><Button variant="secondary" disabled>Edit tugas</Button><Button variant="secondary" disabled>Arsipkan tugas</Button></>} />
+    <PageHeader title="Detail tugas" description="Satu tugas bersama, progres masing-masing anggota dari checklist tersimpan." actions={<><Button variant="secondary" disabled>Edit tugas</Button><Button variant="secondary" disabled>Arsipkan tugas</Button></>} />
     <Panel className="feature-panel task-overview">
       <div className="task-overview__heading"><FileText size={23} aria-hidden="true" /><SectionHeading title="Informasi tugas" description="Metadata ditampilkan setelah tugas dan akses berhasil diverifikasi." /></div>
       <TaskMetadata />
@@ -22,10 +22,14 @@ export default function TaskDetailPage() {
     <div className="task-detail-layout">
       <div className="stack">
         <TaskChecklistSection />
-        <Panel className="feature-panel task-update-panel">
-          <SectionHeading eyebrow="WORK UPDATE" title="Laporan pekerjaan & kendala" description="Struktur panel mengadaptasi frame Update Progres; cakupan laporan belum diputuskan." />
-          <UnavailableState title="Laporan belum dapat dimuat" description="Tidak ada laporan yang ditampilkan atau dikirim. Form laporan menunggu keputusan produk, tugas terverifikasi, dan layanan penyimpanan." />
-          <p className="task-update-panel__note"><LockKeyhole size={16} aria-hidden="true" />Tidak ada input persentase manual atau upload. Progres bersumber dari checklist yang tersimpan di server.</p>
+        <Panel className="feature-panel task-update-panel" aria-labelledby="task-report-title">
+          <div className="task-members__heading"><h2 id="task-report-title">Laporan pekerjaan &amp; kendala</h2><p>Data anggota menunggu verifikasi akses.</p></div>
+          <div className="task-report-surface" aria-label="Panel laporan pekerjaan">
+            <SectionHeading title="Tulis / update laporan" description="Apa yang sudah dikerjakan? Ada kendala?" />
+            <UnavailableState title="Laporan belum dapat dimuat" description="Tidak ada laporan yang ditampilkan atau dikirim. Form laporan menunggu keputusan produk, tugas terverifikasi, dan layanan penyimpanan." />
+            <p className="task-update-panel__note"><LockKeyhole size={16} aria-hidden="true" />Tidak ada input persentase manual atau upload. Progres bersumber dari checklist yang tersimpan di server.</p>
+            <div className="task-report-actions"><Button disabled>Simpan laporan</Button></div>
+          </div>
         </Panel>
       </div>
       <aside className="stack">

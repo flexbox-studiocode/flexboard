@@ -14,6 +14,11 @@ it('menampilkan struktur detail tanpa mengarang metadata, progres, atau izin', (
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   expect(screen.getByText('unavailable', { selector: 'code' })).toBeInTheDocument()
+  const reportSurface = screen.getByLabelText('Panel laporan pekerjaan')
+  expect(reportSurface).toHaveClass('task-report-surface')
+  expect(reportSurface).toContainElement(screen.getByRole('heading', { name: 'Laporan belum dapat dimuat' }))
+  expect(screen.getByRole('button', { name: 'Simpan laporan' })).toBeDisabled()
+  expect(document.querySelector('input[type="file"]')).not.toBeInTheDocument()
 })
 
 it('metadata tidak memilih default status, bobot, tanggal, atau anggota', () => {
