@@ -34,7 +34,7 @@ export default function WorkspaceLayout() {
   useEffect(() => {
     const titles = { '/': 'Beranda', '/tasks': 'Tugas Kami', '/team-progress': 'Progres Tim', '/members': 'Anggota', '/activity': 'Aktivitas' }
     document.title = `${titles[location.pathname] || 'Tugas'} | FlexBoard`
-    document.querySelector('#workspace-main')?.focus()
+    document.querySelector('#workspace-main')?.focus({ preventScroll: true })
   }, [location.pathname])
   const showBanner = ['/', '/tasks', '/team-progress'].includes(location.pathname)
   return <div className="site-frame">

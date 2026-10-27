@@ -49,6 +49,16 @@ test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
   await page.getByRole('button', { name: 'Reset filter' }).click()
   await expect(page).toHaveURL(/\/tasks$/)
 })
+test('fokus route tidak menggulir header keluar layar dan skip link muncul saat keyboard', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/tasks/new')
+  await expect(page.locator('main')).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  const skip = page.getByRole('link', { name: 'Lewati ke konten utama' })
+  expect(await skip.evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThan(0)
+  await skip.focus()
+  expect(await skip.evaluate(element => element.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0)
+})
 test('login dan penyimpanan belum aktif tanpa kontrak backend', async ({ page }) => {
   await page.goto('/login')
   await expect(page.getByRole('button', { name: 'Masuk belum tersedia' })).toBeDisabled()
