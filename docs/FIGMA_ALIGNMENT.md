@@ -43,6 +43,18 @@ Baseline screenshots captured locally with Playwright at 1440 px before implemen
 
 Validate and commit each logical change with explicit staging. Use the existing approved Git identity and authenticated `Constanvel` account. Leave the nested untracked `flexboard/` repository untouched. Push only after the full alignment package and final validation; no force push or merge to main.
 
+## Implementation result
+
+- Shared header/banner/heading composition aligned; preview notice moved below content.
+- Home restored to navy shared task, blue team panel and compact activity section. Project preview remains a secondary extension.
+- Tasks use navy overview and white member panel; filters no longer occupy a separate dominant card.
+- Task form uses full-width white panel/navy fields; detail uses navy reporting surface, without manual progress/upload.
+- Progress, activity and members use a primary white panel with compact controls; login retains the white card/watermark/navy backing.
+- Validation: lint passed; 78 component tests, 3 Node checks, 30 Chromium tests passed; production build passed.
+- Browser screenshots cover 10 routes at 390/1440 px and are written under ignored `test-results/`. Existing overflow tests cover nine widths from 320 to 1920 px.
+- Visual review found and fixed cross-route CSS overriding homepage panel colors. Color assertions now cover the navy/blue surfaces. Screenshot capture is not an automated Figma pixel-diff.
+- No new dependencies, production data mocks, API endpoints, database changes or credentials were introduced. No claim of pixel-perfect rendering for unavailable content or screens without dedicated frames.
+
 ## Integration boundary
 
 This work aligns frontend presentation, not production integration. API contracts, auth, role capabilities, reporting scope and timezone decisions remain pending. See `FRONTEND_API_PROPOSAL.md` and `FRONTEND_STATUS.md`.

@@ -34,13 +34,13 @@ File: https://www.figma.com/design/6VJnow9ExBcHVvLQODUzLw/FlexBoard-MCP?node-id=
 
 | Frame | Node | Visual/UI tersedia | Deviasi dan batas integrasi |
 |---|---|---|---|
-| Beranda | 1:5 | Header/logo, banner, pencarian, ringkasan, panel tugas/aktivitas; pratinjau proyek sebagai perluasan | Nilai — dan layanan belum tersedia menggantikan contoh; ringkasan serta daftar menunggu API |
-| Tugas kami | 1:148 | Banner, hierarki judul, toolbar, panel daftar; TaskCard siap menerima props | Filter mengikuti field PRD; pilihan enum disabled dan tanpa kartu contoh/pagination palsu |
-| Progres team | 1:286 | Banner, ringkasan, panel perkembangan/filter dan pemberitahuan sumber progres | Tidak menyalin persentase contoh; agregasi/checklist/bobot menunggu server dan kebijakan produk |
-| aktivitas terbaru | 1:408 | Header, toolbar, panel riwayat, catatan sumber aktivitas; ActivityList reusable | Tidak ada aktor/waktu/peristiwa buatan; filter tanggal ditambahkan sesuai PRD |
+| Beranda | 1:5 | Kartu tugas bersama navy, panel Tim FlexBox biru, aktivitas ringkas; statistik generik dihapus | Form Feedback diganti aktivitas sesuai persetujuan; pratinjau proyek tetap bagian tambahan; data menunggu API |
+| Tugas kami | 1:148 | Banner, kartu ringkasan navy, panel progres anggota putih, filter diringkas; TaskCard reusable | Filter mengikuti PRD; tanpa kartu contoh/pagination palsu; data anggota dan tugas belum dimuat |
+| Progres team | 1:286 | Satu panel putih progres anggota/filter; statistik dominan dihapus; MemberProgressList reusable | Tidak menyalin persentase contoh; agregasi/checklist/bobot menunggu server dan kebijakan produk |
+| aktivitas terbaru | 1:408 | Satu panel putih Update pekerjaan, filter ringkas, baris avatar; ActivityList reusable | Tidak ada aktor/waktu/peristiwa buatan; filter tanggal ditambahkan sesuai PRD |
 | Update Progres | 1:468 | Pola panel diadaptasi ke detail tugas: checklist/progres, riwayat, laporan/kendala unavailable | Tidak ada route tambahan, persentase manual, atau upload; cakupan laporan belum disepakati |
 | Login | 1:544 | Kartu, watermark, lapisan navy, ukuran form desktop dan tautan pratinjau | Akun/password contoh tidak disalin; input dan login disabled, kontrak identitas/sesi belum tersedia |
-| Menambahkan tugas | 1:573 | Form, kelompok field, panduan, rancangan checklist lokal dan tombol simpan disabled | Proyek/multi-assignee/bobot/checklist mengikuti PRD; enum belum ditetapkan, tidak ada penyimpanan |
+| Menambahkan tugas | 1:573 | Banner, panel form putih full-width, input navy/aksen biru, panduan lipat, rancangan checklist lokal | Proyek/multi-assignee/bobot/checklist mengikuti PRD; enum belum ditetapkan, simpan disabled |
 
 Semua tujuh frame diperiksa melalui design context/render dan screenshot referensi. Proporsi header/banner/login, dekorasi sudut pencarian, panel/radius, dan warna navy diperhalus. Screenshot implementasi desktop serta dialog proyek mobile diperiksa; ini pemeriksaan manual, bukan tes kesamaan piksel.
 Detail tugas, proyek, Anggota, profil, checklist lengkap, dan mobile merupakan perluasan pola visual karena frame khusus belum tersedia. Code Connect tidak tersedia pada seat saat pemeriksaan. Tidak ada klaim pixel-perfect atau seluruh MVP selesai.
@@ -69,7 +69,9 @@ Kontrak endpoint dan payload: lihat FRONTEND_API_PROPOSAL.md. Implementasi integ
 ## Validasi dan batasannya
 
 - Baseline sebelum perubahan: lint/build lulus, 0 tes.
-- Validasi akhir kode: `npm run lint` lulus, `npm test` 66 tes lulus, `npm run test:browser` 27 tes lulus, `npm run test:node` 3 tes konfigurasi lulus, dan `npm run build` lulus.
+- Validasi akhir penyelarasan Figma: `npm run lint` lulus, `npm test` 78 tes lulus, `npm run test:browser` 30 tes lulus, `npm run test:node` 3 tes konfigurasi lulus, dan `npm run build` lulus.
+- `tests/browser/alignment.spec.js` merekam 10 route (termasuk 404/edit) pada 390 dan 1440 px ke `test-results/`, memeriksa aset lokal, urutan bagian Beranda, warna panel navy/biru, dan navigasi aktif. Ini screenshot capture dan assertion geometri/warna, bukan screenshot-diff otomatis terhadap Figma.
+- Screenshot desktop/mobile diperiksa terhadap komposisi Figma. Koreksi specificity menjaga kartu Beranda tetap navy saat CSS semua route dimuat. Status pengembangan dipindahkan ke bawah konten agar tidak mengubah posisi banner. Spesifikasi/deviansi: `FIGMA_ALIGNMENT.md`.
 - Tes unit/komponen menggunakan props generik dan interaksi lokal; tidak memakai mock API/domain.
 - Playwright Chromium memeriksa seluruh sembilan route pada 320/360/390/601/768/1001/1024/1440/1920 px: heading, logo terisi, tanpa overflow, tanpa exception browser, tanpa request /api domain.
 - Tes menu: fokus tetap di dialog, Escape, kembali ke trigger, navigasi.
@@ -95,8 +97,7 @@ Keputusan produk pada tabel di atas tetap proposed, bukan agreed. Penanggung jaw
 
 ## Git
 
-Branch: feat/frontend-foundation. Identitas: Rainer <rainersimanjuntak59@gmail.com>; akun autentikasi disetujui: Constanvel.
-Folder repository terpisah flexboard/ dipertahankan dan tidak distage. Commit per perubahan logis, tanpa push per commit.
-Commit tahap pelengkapan UI: 0d328f6 (detail tugas), bf5ad0a (proyek), f96cfc0 (anggota/akun), d193d72 (visual/padding input), 6fce5ca (tes browser). Commit dokumentasi mengikuti daftar ini.
-Remote-tracking lokal saat pemeriksaan menunjuk origin/feat/frontend-foundation pada a386054; tahap pelengkapan UI ini belum dipush. Tidak dilakukan merge atau deployment.
-Push ditunda karena lingkup seluruh MVP belum selesai; hanya dilakukan setelah lingkup yang disepakati selesai dan validasi akhir berhasil, atau setelah instruksi milestone terpisah.
+Branch penyelarasan: `feat/figma-alignment`, dari `feat/frontend-foundation`. Identitas: Rainer <rainersimanjuntak59@gmail.com>; autentikasi `Constanvel` diverifikasi sebelum implementasi.
+Folder repository terpisah `flexboard/` dipertahankan dan tidak distage. Commit per perubahan logis, tanpa push per commit.
+Commit penyelarasan: 8f4c218 (spesifikasi), 12af29b (layout bersama), 55526ff (Beranda), 6458b0e (progres), e0c1aaa (aktivitas), d35695b (login), 9b5dfd3 (anggota), e192b2d (tugas/form/detail), 32aa8ee (warna panel), 3a60747 (filter/kontras), 3d9d335 (tes visual). Commit dokumentasi mengikuti daftar ini.
+Paket penyelarasan visual diselesaikan sesuai instruksi milestone, bukan seluruh integrasi MVP. Push dijadwalkan satu kali setelah commit dokumentasi dan validasi akhir; hasil push dilaporkan pada ringkasan pelaksanaan. Tidak ada merge ke main, force push, atau deployment manual.
