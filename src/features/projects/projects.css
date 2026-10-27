@@ -1,0 +1,4 @@
+@import '../common/features.css';
+.project-dialog-form { display: grid; gap: 1.25rem; }
+.project-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .75rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); }
+@media (max-width: 600px) { .project-dialog-actions > button { flex: 1; } }

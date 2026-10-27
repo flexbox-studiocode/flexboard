@@ -1,0 +1,9 @@
+.profile-details { display: grid; gap: 0; margin: 0; }
+.profile-details > div { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-top: 1px solid var(--color-border); font-size: .8rem; }
+.profile-details dt { color: var(--color-muted); }
+.profile-details dd { margin: 0; font-weight: 700; }
+.profile-disclosure { display: flex; gap: .6rem; align-items: flex-start; color: var(--color-muted); font-size: .75rem; line-height: 1.8; margin-block: 1.2rem; }
+.profile-disclosure svg { flex-shrink: 0; margin-top: .2rem; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.profile-actions > * { flex: 1 1 40%; }
+@media (max-width: 480px) { .profile-actions > * { flex-basis: 100%; } }

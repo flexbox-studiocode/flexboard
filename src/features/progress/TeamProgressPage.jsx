@@ -1,0 +1,8 @@
+import { ChartNoAxesCombined, CircleCheck, Users } from 'lucide-react'
+import { PageHeader, Panel, UnavailableState } from '../../components/ui/index.js'
+import { DataNotice, FilterToolbar, MetricCard, SectionHeading } from '../common/FeatureUI.jsx'
+import './progress.css'
+
+export default function TeamProgressPage() {
+  return <div className="feature-page progress-page"><PageHeader eyebrow="TEAM INSIGHTS" title="Progres Tim" description="Lihat perkembangan anggota dan pekerjaan yang membentuk progres tim." /><section className="progress-summary" aria-label="Ringkasan progres"><MetricCard label="Progres tim" icon={ChartNoAxesCombined} caption="Menunggu hasil perhitungan server" /><MetricCard label="Anggota dalam cakupan" icon={Users} tone="purple" /><MetricCard label="Tugas selesai" icon={CircleCheck} tone="green" /></section><Panel className="feature-panel"><SectionHeading title="Perkembangan anggota" description="Pilih cakupan proyek untuk menelusuri tugas dan progres setiap anggota." /><FilterToolbar placeholder="Cari anggota…" member /><div className="feature-results-heading"><h2>Progres per anggota</h2><span>DATA BELUM TERSEDIA</span></div><UnavailableState title="Progres tim belum dapat dimuat" description="Layanan progres belum terhubung. Nama anggota, tugas pembentuk, dan persentase belum dapat ditampilkan. Data yang tidak tersedia tidak ditafsirkan sebagai progres 0%." /></Panel><DataNotice title="Progres dari pekerjaan yang nyata">Progres akan menggunakan hasil perhitungan server berdasarkan checklist dan bobot tugas. Cakupan, tugas tanpa checklist, dan aturan tugas bersama perlu mengikuti kebijakan produk yang disepakati.</DataNotice></div>
+}

@@ -1,0 +1,107 @@
+import { expect, test } from '@playwright/test'
+
+const routes = ['/', '/tasks', '/tasks/new', '/tasks/unavailable', '/tasks/unavailable/edit', '/team-progress', '/members', '/activity', '/login']
+for (const width of [360, 390, 768, 1024, 1440]) {
+  test(`seluruh halaman tanpa overflow pada ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const errors = []
+    const apiRequests = []
+    page.on('pageerror', error => errors.push(error.message))
+    page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/')) apiRequests.push(request.url()) })
+    for (const route of routes) {
+      await page.goto(route)
+      await expect(page.locator('h1')).toBeVisible()
+      await expect(page.locator('.brand img')).toBeVisible()
+      expect(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true)
+    }
+    expect(errors).toEqual([])
+    expect(apiRequests).toEqual([])
+  })
+}
+test('menu mobile menahan fokus, mendukung Escape, dan mengembalikan fokus', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: 'Buka menu navigasi' })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Navigasi workspace' })
+  await expect(dialog).toBeVisible()
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  for (let index = 0; index < 10; index++) {
+    await page.keyboard.press('Tab')
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
+  }
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await expect(trigger).toBeFocused()
+  await trigger.click()
+  await dialog.getByRole('link', { name: 'Tugas Kami', exact: true }).click()
+  await expect(page).toHaveURL(/\/tasks$/)
+  await expect(dialog).not.toBeVisible()
+})
+test('dialog tidak ditutup oleh klik padding dan backdrop tetap menutup', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Buka menu navigasi' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Navigasi workspace' })
+  const bounds = await dialog.boundingBox()
+  await page.mouse.click(bounds.x + 4, bounds.y + 4)
+  await expect(dialog).toBeVisible()
+  await page.mouse.click(2, 2)
+  await expect(dialog).not.toBeVisible()
+})
+
+test('profil pratinjau tidak mengarang sesi dan dapat dibuka pada mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: 'Buka profil akun' })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Profil akun' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Profil belum dapat dimuat' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Keluar', exact: true })).toBeDisabled()
+  await expect(dialog.getByRole('button', { name: 'Kelola role/status' })).toBeDisabled()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+  await page.keyboard.press('Escape')
+  await expect(trigger).toBeFocused()
+})
+
+test('checklist baru hanya rancangan input lokal', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/tasks/new')
+  await page.getByRole('button', { name: 'Tambah item checklist' }).click()
+  await page.getByLabel('Item checklist 1', { exact: true }).fill('Input lokal pengguna')
+  await expect(page.getByRole('status').filter({ hasText: '1 item dalam rancangan lokal.' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Simpan tugas' })).toBeDisabled()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+  await page.reload()
+  await expect(page.getByLabel('Item checklist 1', { exact: true })).toHaveCount(0)
+})
+
+test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Cari tugas berdasarkan judul atau deskripsi').fill('kata pencarian')
+  await page.getByRole('button', { name: 'Cari tugas', exact: true }).click()
+  await expect(page).toHaveURL(/\/tasks\?q=kata%20pencarian$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Tugas Kami' })).toBeVisible()
+  await expect(page.getByText('Daftar tugas belum dapat dimuat')).toBeVisible()
+  await page.getByRole('button', { name: 'Reset filter' }).click()
+  await expect(page).toHaveURL(/\/tasks$/)
+})
+test('fokus route tidak menggulir header keluar layar dan skip link muncul saat keyboard', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/tasks/new')
+  await expect(page.locator('main')).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  const skip = page.getByRole('link', { name: 'Lewati ke konten utama' })
+  expect(await skip.evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThan(0)
+  await skip.focus()
+  expect(await skip.evaluate(element => element.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0)
+})
+test('login dan penyimpanan belum aktif tanpa kontrak backend', async ({ page }) => {
+  await page.goto('/login')
+  await expect(page.getByRole('button', { name: 'Masuk belum tersedia' })).toBeDisabled()
+  await expect(page.getByLabel('Password')).toBeDisabled()
+  await page.goto('/tasks/new')
+  await expect(page.getByRole('button', { name: /Simpan/ })).toBeDisabled()
+})

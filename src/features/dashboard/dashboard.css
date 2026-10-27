@@ -1,0 +1,4 @@
+.dashboard-page .dashboard-projects { min-height: 20rem; }
+.dashboard-bottom-grid { align-items: stretch; }
+.dashboard-bottom-grid .feature-data-notice { align-items: center; }
+@media (max-width: 600px) { .dashboard-page .dashboard-projects { min-height: 0; } }
