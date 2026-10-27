@@ -13,6 +13,11 @@ export function MetricCard({ label, icon: Icon, caption, tone = 'blue' }) {
 
 export function FilterToolbar({ placeholder = 'Cari…', member = false, dates = false, taskFilters = false }) {
   const [params, setParams] = useSearchParams()
+  const from = params.get('from') || ''
+  const to = params.get('to') || ''
+  const dateError = dates && from && to && from > to
+    ? 'Rentang tanggal tidak valid. Tanggal mulai harus sebelum atau sama dengan tanggal akhir.'
+    : undefined
   const update = (name, value) => {
     setParams(previous => {
       const next = new URLSearchParams(previous)
@@ -27,7 +32,7 @@ export function FilterToolbar({ placeholder = 'Cari…', member = false, dates =
     for (const key of ['q', 'from', 'to', 'project', 'member', 'status', 'priority']) next.delete(key)
     return next
   }, { replace: true })
-  return <div className="feature-filters"><div className="feature-filter-search"><Search size={18} aria-hidden="true" /><Input label="Pencarian" type="search" placeholder={placeholder} value={params.get('q') || ''} onChange={event => update('q', event.target.value)} /></div><div className="feature-filter-options"><span className="feature-filter-label"><SlidersHorizontal size={16} aria-hidden="true" />Filter</span><Select label="Proyek" value="" disabled><option value="">Proyek belum tersedia</option></Select>{member && <Select label="Anggota" value="" disabled><option value="">Anggota belum tersedia</option></Select>}{taskFilters && <><Select label="Status" value="" disabled><option value="">Status belum tersedia</option></Select><Select label="Prioritas" value="" disabled><option value="">Prioritas belum tersedia</option></Select></>}{dates && <><Input label="Dari tanggal" type="date" value={params.get('from') || ''} onChange={event => update('from', event.target.value)} /><Input label="Sampai tanggal" type="date" min={params.get('from') || undefined} value={params.get('to') || ''} onChange={event => update('to', event.target.value)} /></>}<Button variant="ghost" onClick={reset} disabled={!hasFilters}>Reset filter</Button></div><p className="feature-filter-notice" role="status">{hasFilters ? 'Pilihan tersimpan di URL. Pencarian dan filter belum dijalankan karena layanan data belum terhubung.' : 'Pencarian dan filter akan menggunakan data sesuai akses setelah layanan terhubung.'}</p></div>
+  return <div className="feature-filters"><div className="feature-filter-search"><Search size={18} aria-hidden="true" /><Input label="Pencarian" type="search" placeholder={placeholder} value={params.get('q') || ''} onChange={event => update('q', event.target.value)} /></div><div className="feature-filter-options"><span className="feature-filter-label"><SlidersHorizontal size={16} aria-hidden="true" />Filter</span><Select label="Proyek" value="" disabled><option value="">Proyek belum tersedia</option></Select>{member && <Select label="Anggota" value="" disabled><option value="">Anggota belum tersedia</option></Select>}{taskFilters && <><Select label="Status" value="" disabled><option value="">Status belum tersedia</option></Select><Select label="Prioritas" value="" disabled><option value="">Prioritas belum tersedia</option></Select></>}{dates && <><Input label="Dari tanggal" type="date" value={from} error={dateError} onChange={event => update('from', event.target.value)} /><Input label="Sampai tanggal" type="date" min={from || undefined} value={to} error={dateError} onChange={event => update('to', event.target.value)} /></>}<Button variant="ghost" onClick={reset} disabled={!hasFilters}>Reset filter</Button></div><p className="feature-filter-notice" role="status">{dateError ? 'Filter tidak valid. Pencarian dan filter tidak dijalankan. Perbaiki rentang tanggal; pilihan tetap tersimpan di URL.' : hasFilters ? 'Pilihan tersimpan di URL. Pencarian dan filter belum dijalankan karena layanan data belum terhubung.' : 'Pencarian dan filter akan menggunakan data sesuai akses setelah layanan terhubung.'}</p></div>
 }
 
 export function DataNotice({ title = 'Data langsung dari sumbernya', children }) {
