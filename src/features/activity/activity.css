@@ -3,3 +3,10 @@
 .activity-audit-note > svg { flex-shrink: 0; color: var(--color-primary); margin-top: .1rem; }
 .activity-audit-note h2 { font-family: var(--font-display); color: var(--color-ink); font-size: .9rem; margin: 0 0 .45rem; }
 .activity-audit-note p { font-size: .78rem; line-height: 1.8; margin: 0; }
+.activity-list { list-style: none; padding: 0; margin: 0; }
+.activity-list > li { display: flex; gap: .85rem; padding-block: 1.1rem; border-bottom: 1px solid var(--color-border); }
+.activity-list > li:last-child { border-bottom: 0; }
+.activity-list__mark { display: grid; place-items: center; flex: 0 0 36px; height: 36px; background: var(--color-primary-soft); color: var(--color-primary-dark); border: 1px solid var(--color-border); }
+.activity-list > li > div { min-width: 0; }
+.activity-list p { margin: 0 0 .4rem; font-size: .82rem; line-height: 1.8; }
+.activity-list time, .activity-list__time { color: var(--color-muted); font-family: var(--font-mono); font-size: .75rem; }

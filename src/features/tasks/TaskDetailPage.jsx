@@ -1,10 +1,37 @@
-import { ArrowLeft, CircleHelp } from 'lucide-react'
+import { ArrowLeft, CircleHelp, FileText, LockKeyhole } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, PageHeader, Panel, UnavailableState } from '../../components/ui/index.js'
 import { DataNotice, SectionHeading } from '../common/FeatureUI.jsx'
+import ActivityList from '../activity/ActivityList.jsx'
+import TaskChecklistSection from './TaskChecklistSection.jsx'
+import TaskMetadata from './TaskMetadata.jsx'
 import './tasks.css'
 
 export default function TaskDetailPage() {
   const { id } = useParams()
-  return <div className="feature-page"><Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} aria-hidden="true" />Kembali ke Tugas Kami</Link><PageHeader eyebrow="TASK DETAIL" title="Detail tugas" description="Informasi, checklist, dan perkembangan pekerjaan dalam satu tempat." /><Panel className="feature-panel"><UnavailableState title="Detail tugas belum dapat dimuat" description="Layanan tugas belum terhubung. Keberadaan tugas dan hak akses akun belum dapat diverifikasi; judul, penanggung jawab, dan metadata tidak ditampilkan." /><div className="task-reference"><CircleHelp size={16} aria-hidden="true" /><p>Referensi URL: <code>{id}</code>. Referensi ini belum dikonfirmasi sebagai tugas yang dapat diakses.</p></div></Panel><div className="feature-two-columns"><Panel className="feature-panel"><SectionHeading eyebrow="WORK BREAKDOWN" title="Checklist & progres" description="Status checklist dan progres mengikuti data server." /><UnavailableState title="Checklist belum tersedia" description="Checklist tidak dapat ditampilkan atau diubah sebelum data tugas dan izin berhasil diverifikasi." /><div className="task-disabled-actions"><Button variant="secondary" disabled>Tambah checklist</Button><Button variant="ghost" disabled>Edit tugas</Button><Button variant="ghost" disabled>Arsipkan tugas</Button></div></Panel><div className="stack"><DataNotice title="Perubahan harus tersimpan">Checklist hanya diperbarui setelah server memvalidasi akses dan menyimpan perubahan. Progres tidak diisi manual.</DataNotice><Panel className="feature-panel"><SectionHeading title="Riwayat tugas" /><UnavailableState title="Riwayat belum tersedia" description="Aktivitas terkait tugas akan dimuat dari catatan server." /></Panel></div></div><Panel className="feature-panel"><SectionHeading title="Laporan pekerjaan & kendala" description="Catatan pekerjaan memerlukan tugas yang terverifikasi dan layanan penyimpanan." /><UnavailableState title="Laporan belum dapat dimuat" description="Tidak ada laporan yang ditampilkan sampai layanan tersedia. Pengiriman catatan dan lampiran belum diaktifkan." /><Button variant="secondary" disabled>Kirim laporan</Button></Panel></div>
+  return <div className="feature-page">
+    <Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} aria-hidden="true" />Kembali ke Tugas Kami</Link>
+    <PageHeader eyebrow="TASK DETAIL" title="Detail tugas" description="Informasi, checklist, dan perkembangan pekerjaan dalam satu tempat." actions={<><Button variant="secondary" disabled>Edit tugas</Button><Button variant="secondary" disabled>Arsipkan tugas</Button></>} />
+    <Panel className="feature-panel task-overview">
+      <div className="task-overview__heading"><FileText size={23} aria-hidden="true" /><SectionHeading title="Informasi tugas" description="Metadata ditampilkan setelah tugas dan akses berhasil diverifikasi." /></div>
+      <TaskMetadata />
+      <section className="task-description" aria-labelledby="task-description-title"><h2 id="task-description-title">Deskripsi</h2><p className="muted">Deskripsi tugas belum tersedia.</p></section>
+      <UnavailableState title="Detail tugas belum dapat dimuat" description="Layanan tugas belum terhubung. Keberadaan tugas dan hak akses akun belum dapat diverifikasi; judul dan nilai metadata tidak dikarang." />
+      <div className="task-reference"><CircleHelp size={16} aria-hidden="true" /><p>Referensi URL: <code>{id}</code>. Referensi ini belum dikonfirmasi sebagai tugas yang dapat diakses.</p></div>
+    </Panel>
+    <div className="task-detail-layout">
+      <div className="stack">
+        <TaskChecklistSection />
+        <Panel className="feature-panel task-update-panel">
+          <SectionHeading eyebrow="WORK UPDATE" title="Laporan pekerjaan & kendala" description="Struktur panel mengadaptasi frame Update Progres; cakupan laporan belum diputuskan." />
+          <UnavailableState title="Laporan belum dapat dimuat" description="Tidak ada laporan yang ditampilkan atau dikirim. Form laporan menunggu keputusan produk, tugas terverifikasi, dan layanan penyimpanan." />
+          <p className="task-update-panel__note"><LockKeyhole size={16} aria-hidden="true" />Tidak ada input persentase manual atau upload. Progres bersumber dari checklist yang tersimpan di server.</p>
+        </Panel>
+      </div>
+      <aside className="stack">
+        <DataNotice title="Perubahan harus tersimpan">Checklist hanya diperbarui setelah server memvalidasi akses dan menyimpan perubahan. Progres tidak diisi manual.</DataNotice>
+        <Panel className="feature-panel"><SectionHeading eyebrow="TASK HISTORY" title="Riwayat tugas" description="Aktor, tindakan, objek terkait, dan waktu berasal dari catatan server." /><ActivityList /></Panel>
+      </aside>
+    </div>
+  </div>
 }
