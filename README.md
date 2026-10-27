@@ -1,6 +1,9 @@
 # FlexBoard
 
-FlexBoard adalah fondasi aplikasi internal FlexBox untuk mengelola tugas dan memantau progres tim. Tahap 1 menyediakan shell React, routing, layout responsif, komponen UI dasar, dan endpoint health check Vercel.
+FlexBoard adalah fondasi aplikasi internal FlexBox untuk mengelola tugas dan memantau progres tim. Frontend saat ini menyediakan pratinjau UI berdasarkan Figma, routing, komponen bersama, dan layout responsif. **Belum ada autentikasi atau integrasi domain: ini bukan MVP yang berfungsi end-to-end.**
+
+Status fitur, keputusan terbuka, dan deviasi Figma: [docs/FRONTEND_STATUS.md](docs/FRONTEND_STATUS.md).
+Usulan kontrak API yang belum disepakati: [docs/FRONTEND_API_PROPOSAL.md](docs/FRONTEND_API_PROPOSAL.md).
 
 ## Teknologi
 - React JS + Vite
@@ -10,7 +13,7 @@ FlexBoard adalah fondasi aplikasi internal FlexBox untuk mengelola tugas dan mem
 - Node.js serverless function kompatibel Vercel
 
 ## Prasyarat
-Node.js 22+ dan npm 10+.
+Node.js 22.13+ atau 24+ dan npm 10+. Pengujian pekerjaan ini menggunakan Node.js 24.16.0.
 
 ## Instalasi dan frontend
 ```bash
@@ -41,14 +44,24 @@ Atau deploy ke Vercel dan panggil URL `/api/health`. Vite dev server tidak menja
 - `npm run build` — build produksi
 - `npm run preview` — preview hasil build
 - `npm run lint` — pemeriksaan ESLint
-- `npm test` — Node test runner; belum ada test domain pada Tahap 1
+- `npm test` — Vitest dan React Testing Library untuk komponen/routing tanpa mock API
+- `npm run test:watch` — mode pengembangan tes komponen
+- `npm run test:browser` — Playwright Chromium; jalankan `npx playwright install chromium` terlebih dahulu
+- `npm run test:node` — Node test runner untuk tes Node terpisah (belum ada tes domain)
+
+Tes browser menjalankan Vite lokal otomatis atau memakai server yang sudah aktif pada `127.0.0.1:5173`. Tidak membuat akun/sesi/tugas palsu dan tidak menguji backend yang belum tersedia.
 
 ## Struktur utama
 ```text
 api/health.js          # Vercel serverless health endpoint
-src/App.jsx            # shell, routing, halaman placeholder
-src/main.jsx           # entry React
-src/styles/global.css  # design tokens dan styling responsif
+src/App.jsx            # entry aplikasi
+src/main.jsx           # entry React + BrowserRouter
+src/app/               # deklarasi route dan tes routing
+src/components/        # komponen UI dan layout bersama
+src/features/          # halaman dan tampilan per fitur, belum terintegrasi
+src/assets/brand/      # logo lokal dari Figma
+src/styles/            # CSS tokens, UI, global, dan layout
+tests/browser/         # smoke test UI Chromium tanpa backend
 .flexboard/            # PRD, PLAN, dan aset logo
 ```
 
@@ -56,4 +69,6 @@ src/styles/global.css  # design tokens dan styling responsif
 Salin `.env.example` menjadi `.env` untuk konfigurasi lokal. `DATABASE_URL` dan `AUTH_SECRET` hanya untuk backend dan belum digunakan pada Tahap 1. Jangan memakai prefix `VITE_` untuk secret.
 
 ## Status Tahap 1
-PostgreSQL, autentikasi, sesi, role, migration, API domain, dan data produksi belum selesai. Halaman internal saat ini adalah placeholder terarah tanpa data palsu produksi. Provider PostgreSQL dan strategi autentikasi ditetapkan sebelum Tahap 2/3.
+PostgreSQL, autentikasi, sesi, role, migration, API domain, dan data produksi belum tersedia. Halaman workspace merupakan pratinjau publik tanpa data privat dan dengan pengungkapan status integrasi. Aksi penyimpanan dan login nonaktif; input form baru hanya state lokal yang hilang saat keluar halaman. Jangan memasukkan data sensitif pada pratinjau. Provider PostgreSQL, strategi autentikasi, kontrak API, serta aturan bisnis terbuka harus disepakati sebelum integrasi.
+
+Audit dependensi masih melaporkan 2 temuan moderate React Router yang memerlukan evaluasi migrasi major; tidak ada high/critical pada audit terakhir. Jangan menganggap fondasi ini siap produksi.
