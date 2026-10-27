@@ -27,7 +27,13 @@ export function Modal({ open, onClose, title, children, className = '' }) {
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
     if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
   }
-  return <dialog ref={ref} className={`modal ${className}`} aria-labelledby={titleId} onKeyDown={containFocus} onCancel={event => { event.preventDefault(); onClose() }} onClick={event => { if (event.target === ref.current) onClose() }}>
+  function dismissBackdrop(event) {
+    if (event.target !== ref.current) return
+    const bounds = ref.current.getBoundingClientRect()
+    const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
+    if (outside) onClose()
+  }
+  return <dialog ref={ref} className={`modal ${className}`} aria-labelledby={titleId} onKeyDown={containFocus} onCancel={event => { event.preventDefault(); onClose() }} onClick={dismissBackdrop}>
     <div className="modal__heading"><h2 id={titleId}>{title}</h2><IconButton label="Tutup dialog" onClick={onClose}><X size={21} /></IconButton></div>
     {open && children}
   </dialog>
