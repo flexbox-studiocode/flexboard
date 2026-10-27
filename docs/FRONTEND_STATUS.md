@@ -10,7 +10,7 @@ Tanggal: 27 Oktober 2026. Status: **fondasi dan pratinjau UI; bukan MVP end-to-e
 - Menu mobile dialog native, penahanan fokus, Escape, pengembalian fokus, skip link.
 - Beranda, Tugas Kami, detail tugas, form baru/edit, Progres Tim, Anggota, Aktivitas, Login.
 - Pencarian/filter URL lokal, reset, navigasi antarrute; bukan pencarian API.
-- Form baru menerima input lokal dan rancangan checklist tanpa penyimpanan/status selesai/progres. State direset ketika referensi route berubah. Form edit tidak mengaku memuat tugas.
+- Form baru memakai satu state induk untuk field dan rancangan checklist controlled dengan ID lokal stabil, tanpa penyimpanan/status selesai/progres. State direset ketika referensi route berubah, termasuk antar-ID edit. Form edit tidak mengaku memuat tugas.
 - Komponen feedback aksesibel dan pagination terkontrol tersedia, belum dipasang pada daftar tanpa metadata API.
 - Profil pratinjau dapat dibuka melalui tombol akun desktop/mobile; identitas/role/status/progres tetap — dan aksi akun disabled.
 - Rentang tanggal terbalik diberi error aksesibel tanpa membuang nilai input atau parameter URL.
@@ -26,7 +26,7 @@ Tanggal: 27 Oktober 2026. Status: **fondasi dan pratinjau UI; bukan MVP end-to-e
 ## Yang belum selesai
 
 Semua integrasi domain, sesi, guard produksi, capability/role UI, penyimpanan checklist/laporan/proyek/tugas, profil, pengelolaan role/status, pagination data, refresh persistensi, konflik API, dan verifikasi keamanan end-to-end menunggu backend dan keputusan produk.
-Komponen presentasional bukan bukti fitur domain selesai. Tidak ada backend/migration yang diubah, dan tidak ada mock yang dibuat.
+Komponen presentasional bukan bukti fitur domain selesai. Tidak ada backend/migration yang diubah atau mock jaringan yang dibuat. Data sintetis untuk menguji komponen hanya berada di tes dan harness browser, bukan fallback aplikasi.
 
 ## Acuan Figma dan deviasi
 
@@ -127,6 +127,21 @@ Paket `fix/frontend-preview-accessibility` berangkat dari `b5a736b` (merge PR #6
 - Lint lulus; `npm test` 111 tes frontend dalam 15 file lulus (komponen dan helper tanggal); tiga tes konfigurasi deployment lulus; production build lulus. Suite database tidak dijalankan dan bukan bukti penerimaan frontend.
 - Pengujian browser awal berhenti pada batas waktu proses 120 detik, bukan assertion gagal; pengulangan dengan batas lebih panjang meluluskan 53 tes. Dua tes tambahan native date-input pada 320 px juga lulus terpisah. Validasi akhir seluruh suite setelah tambahan tes: **55 tes Chromium lulus** (4,2 menit), termasuk regresi 43 tes sebelumnya dan 12 tes baru.
 - Screenshot Login pada 390/1440 px dan form tugas mobile diperiksa; tidak ada perubahan CSS/layout. Tes geometri/warna/font/regresi tetap dipertahankan, bukan screenshot-diff Figma atau verifikasi API/runtime Vercel.
+
+## Kesiapan integrasi state halaman dan form
+
+Paket `refactor/frontend-integration-readiness` berangkat dari working tree bersih pada `e4f9b6c` (`fix/frontend-preview-accessibility`). Tidak membuat merge/rebase meskipun remote `main` telah maju. Lingkup hanya empat halaman daftar, controlled draft, tes, dan dokumentasi; restrukturisasi Beranda/detail tidak termasuk.
+
+- Tugas, Progres Tim, Anggota, dan Aktivitas membedakan unavailable, loading, error, success kosong, dan success berisi melalui `CollectionState` serta `useScopedCollection`. Retry hanya muncul jika callback tersedia; loading/error membuang baris sebelumnya dan tidak menampilkan error server mentah.
+- Resource props adalah model UI internal, bukan kontrak API. Scope harus persis `pathname + search`; scope tidak cocok/status tak dikenal menjadi unavailable, sedangkan success tanpa array menjadi error. Pengaman ini tidak menggantikan cancellation, isolasi cache/sesi, validasi backend, atau otorisasi.
+- Route aplikasi tetap tidak memasok resource sehingga layanan tetap unavailable. Hasil sintetis hanya berada di tes komponen dan `tests/browser/fixtures/collection-states.jsx`, yang tidak diimpor entry aplikasi atau production build. Filter tetap URL lokal; pagination menunggu metadata API.
+- Field dan checklist tugas memakai satu draft induk. `ChecklistDraft` menunggu props untuk menerima perubahan, menjaga ID lokal item, dan memindahkan fokus hanya setelah perubahan diterima. Tanpa callback/ketika disabled, kontrol nonaktif. Reset mencakup new/edit, antar-ID edit, dan ID edit `new` tanpa benturan key.
+- Review menemukan label proyek/tenggat panjang berpotensi terpotong pada kartu tugas. Dua aturan CSS membatasi lebar dan membungkus metadata serta menjaga ikon; assertion browser mencakup label tersebut. Native select, chevron inset 16 px, ruang teks 48 px, dan tinggi/font/line-height filter 48/16/24 px dipertahankan.
+- Baseline paket: lint, 111 tes frontend, dan build lulus. Validasi akhir: lint tanpa warning; `npm test` **149 tes dalam 17 file lulus** (22,73 detik); pengulangan `npm test -- --maxWorkers=1` juga meluluskan 149 tes; `npm run test:browser` **59 tes Chromium lulus** (3,1 menit), termasuk assertion metadata terbaru; tiga tes konfigurasi deployment dan production build lulus.
+- Eksekusi unit penuh awal yang berbarengan dengan suite lain mengalami dua timeout form 5000 ms dan satu assertion bobot setelah timeout; pengulangan lain saat Chromium masih berjalan juga mengalami dua timeout. Tes terarah, suite satu worker, dan pengulangan biasa tanpa suite paralel lulus. Tidak menaikkan timeout global atau mengubah konfigurasi untuk menutup kegagalan tersebut.
+- Empat tes browser baru menguji transisi state, retry keyboard, isolasi query lokal, dan teks tanpa spasi panjang pada 320/390/768/1440 px. Tidak ada request API domain atau exception pada harness. Screenshot Tugas mobile 390 px dan form tugas desktop 1440 px diperiksa; komposisi tetap terjaga. Tes ini memeriksa geometri/perilaku, bukan screenshot-diff atau bukti integrasi API.
+- Tidak ada perubahan endpoint, middleware, database, migration, seed, dependensi, `.env`, atau repository bersarang `flexboard/`. Suite database tidak dijalankan; persetujuan kontrak API/auth dan environment backend tetap blocker. Temuan audit dependensi sebelumnya tidak dievaluasi ulang oleh paket ini.
+- Commit logis: `c57e3a1` (state Tasks bersama), `c7301e2` (tiga halaman daftar), `3b62c19` (controlled draft), dan `091ff72` (regresi browser/wrapping metadata). Koreksi route tes Progres Tim serta dokumentasi disatukan dalam commit penutup setelah validasi. Staging memakai path eksplisit; satu push di akhir, tanpa merge ke `main`, force push, atau bypass hook.
 
 ## Git
 

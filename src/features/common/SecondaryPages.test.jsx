@@ -9,7 +9,7 @@ import ActivityPage from '../activity/ActivityPage.jsx'
 const longName = 'Anggota dengan nama sangat panjang untuk pengujian tampilan koleksi sesuai cakupan'
 const pages = [
   {
-    name: 'Progres tim', Component: TeamProgressPage, prop: 'progress', path: '/progress',
+    name: 'Progres tim', Component: TeamProgressPage, prop: 'progress', path: '/team-progress',
     unavailable: 'Progres tim belum dapat dimuat', empty: 'Belum ada progres anggota',
     loading: 'Memuat progres tim', error: 'Progres tim gagal dimuat', list: '.member-progress-list',
     items: [{ id: 'progress-1', name: longName, roleLabel: 'Penanggung jawab proyek', projectLabel: 'Proyek dari server', progress: 0, averageProgress: 0, detailPath: '/tasks/server-task' }],
