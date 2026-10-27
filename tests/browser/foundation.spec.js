@@ -78,6 +78,95 @@ test('checklist baru hanya rancangan input lokal', async ({ page }) => {
   await expect(page.getByLabel('Item checklist 1', { exact: true })).toHaveCount(0)
 })
 
+test('pratinjau proyek membuang rancangan dan tidak memberikan izin mutasi', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+  await trigger.click()
+  let dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+  await expect(dialog).toBeVisible()
+  await dialog.getByLabel('Nama proyek').fill('Input lokal pengguna')
+  await expect(dialog.getByRole('button', { name: 'Simpan proyek' })).toBeDisabled()
+  await expect(dialog.getByLabel('Status proyek')).toBeDisabled()
+  await dialog.getByRole('button', { name: 'Tutup', exact: true }).click()
+  await expect(trigger).toBeFocused()
+  await trigger.click()
+  await expect(dialog.getByLabel('Nama proyek')).toHaveValue('')
+  await page.keyboard.press('Escape')
+  await page.getByText('Pratinjau struktur pengelolaan', { exact: true }).click()
+  await page.getByRole('button', { name: 'Pratinjau edit proyek', exact: true }).click()
+  dialog = page.getByRole('dialog', { name: /edit proyek/i })
+  await expect(dialog.getByLabel('Nama proyek')).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Pratinjau konfirmasi arsip', exact: true }).click()
+  dialog = page.getByRole('dialog', { name: 'Pratinjau konfirmasi arsip proyek' })
+  await expect(dialog.getByRole('button', { name: 'Arsipkan proyek' })).toBeDisabled()
+  await page.keyboard.press('Escape')
+})
+
+test('pratinjau pengelolaan akun tidak memilih role atau status', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/members')
+  const trigger = page.getByRole('button', { name: 'Pratinjau pengelolaan akun' })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Pratinjau pengelolaan akun' })
+  await expect(dialog).toBeVisible()
+  for (const select of await dialog.getByRole('combobox').all()) {
+    await expect(select).toBeDisabled()
+    await expect(select).toHaveValue('')
+  }
+  await expect(dialog.getByRole('button', { name: /Simpan/ })).toBeDisabled()
+  for (let index = 0; index < 6; index++) {
+    await page.keyboard.press('Tab')
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
+  }
+  await page.keyboard.press('Escape')
+  await expect(trigger).toBeFocused()
+})
+
+test('dialog proyek mobile dapat digulir sampai aksi dan menahan fokus', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+  await dialog.getByLabel('Deskripsi proyek').fill('Input lokal panjang. '.repeat(80))
+  expect(await dialog.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true)
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
+  for (const key of ['Tab', 'Shift+Tab', 'Tab', 'Tab']) {
+    await page.keyboard.press(key)
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
+  }
+  const close = dialog.getByRole('button', { name: 'Tutup', exact: true })
+  await close.scrollIntoViewIfNeeded()
+  await expect(close).toBeInViewport()
+  expect(await dialog.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+  await close.click()
+  await expect(trigger).toBeFocused()
+})
+
+test('referensi detail panjang tidak mengarang data atau meluapkan layar', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  const reference = 'referensi-lokal-'.repeat(30)
+  await page.goto(`/tasks/${reference}`)
+  await expect(page.locator('.task-reference code')).toHaveText(reference)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+  for (const name of ['Edit tugas', 'Arsipkan tugas', 'Tambah checklist']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
+  }
+  await expect(page.getByRole('progressbar')).toHaveCount(0)
+  await expect(page.getByRole('checkbox')).toHaveCount(0)
+})
+
+test('ikon pencarian tidak bertumpuk dengan input', async ({ page }) => {
+  await page.goto('/tasks')
+  const input = page.getByRole('searchbox', { name: 'Pencarian' })
+  const padding = await input.evaluate(element => parseFloat(getComputedStyle(element).paddingLeft))
+  const icon = await page.locator('.feature-filter-search > svg').boundingBox()
+  const bounds = await input.boundingBox()
+  expect(bounds.x + padding).toBeGreaterThan(icon.x + icon.width)
+})
+
 test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Cari tugas berdasarkan judul atau deskripsi').fill('kata pencarian')
