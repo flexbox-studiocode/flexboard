@@ -25,7 +25,13 @@
 .feature-data-notice p:last-child { margin: 0; line-height: 1.8; color: #cad4e2; font-size: .8rem; }
 .feature-filters { display: grid; gap: 1rem; }
 .feature-filter-search { min-width: 0; max-width: 32rem; }
-.feature-filter-options { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; }
+.feature-filter-options { display: flex; flex-wrap: wrap; gap: .8rem; align-items: start; }
+.feature-filter-options > .button { margin-top: 1.8125rem; }
+.feature-filters .field { gap: .5rem; }
+.feature-filters .field > label { font-size: .875rem; font-weight: 700; line-height: 1.5; }
+.feature-filters .field input, .feature-filters .field select { height: 48px; min-height: 48px; padding: .625rem 1rem; border-color: #a8bbd2; border-radius: var(--radius-sm); font-family: var(--font-body); font-size: var(--font-size-control); font-weight: 400; line-height: 1.5; }
+.feature-filters .field__control--leading-icon input { padding-inline-start: 2.65rem; }
+.feature-filters .field__control--select select { padding-inline-end: 3rem; }
 .feature-filter-options > :not(.feature-filter-label):not(button) { min-width: 10rem; flex: 1; }
 .feature-filter-label { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.7rem; font-size: .8rem; font-weight: 600; color: var(--color-muted); }
 .feature-filter-notice { font-size: .75rem; line-height: 1.7; margin: 0; color: var(--color-muted); }

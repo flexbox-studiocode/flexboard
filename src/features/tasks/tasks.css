@@ -63,7 +63,7 @@
 .tasks-page .page-header__actions > .button { background: var(--color-primary); color: #fff; border-radius: 0; }
 .tasks-page .task-filters { padding: 0; background: transparent; border: 0; }
 .task-filters .feature-filters { gap: .75rem; }
-.task-filters .field input, .task-filters .field select { min-height: 40px; padding-block: .5rem; }
+.task-filters .feature-filter-options > .button { min-height: 48px; }
 .task-filters .feature-filter-options { gap: .65rem; }
 .task-filters .feature-filter-label { display: none; }
 .task-filters .feature-filter-options > :not(.feature-filter-label):not(button) { min-width: 0; }
@@ -94,6 +94,8 @@
 .task-form-panel > form > .feature-section-heading h2 { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.25; }
 .task-form-panel .field > label { color: var(--color-muted); font-family: var(--font-mono); font-size: 1.25rem; line-height: 1.5; font-weight: 400; }
 .task-form-panel .field input, .task-form-panel .field textarea, .task-form-panel .field select { min-height: 4.0625rem; padding: .9375rem 2.0625rem; background: var(--color-ink); color: #fff; border-color: var(--color-primary-dark); border-radius: 0; font-family: var(--font-mono); font-size: 1.25rem; line-height: 1.5; }
+.task-form-panel .field__control--select .field__chevron { color: #fff; }
+.task-form-panel .field__control--select:has(select:disabled) .field__chevron { color: #c1c6ce; }
 .task-form-panel .field input::placeholder, .task-form-panel .field textarea::placeholder { color: #c1c6ce; opacity: 1; }
 .task-form-panel .field input:disabled, .task-form-panel .field textarea:disabled, .task-form-panel .field select:disabled { background: var(--color-ink); color: #c1c6ce; opacity: 1; }
 .task-form-panel .field [aria-invalid='true'] { border-color: var(--color-danger); }

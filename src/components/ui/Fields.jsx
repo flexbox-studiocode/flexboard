@@ -1,16 +1,19 @@
 import { useId } from 'react'
-import { Search } from 'lucide-react'
+import { ChevronDown, Search } from 'lucide-react'
 
 function Field({ as: Tag = 'input', label, hint, error, id: suppliedId, className = '', leadingIcon, ...props }) {
   const generatedId = useId()
   const id = suppliedId || generatedId
   const description = [hint && `${id}-hint`, error && `${id}-error`, props['aria-describedby']].filter(Boolean).join(' ') || undefined
+  const singleSelect = Tag === 'select' && !props.multiple && !(Number(props.size) > 1)
+  const control = <Tag {...props} id={id} aria-invalid={error ? true : undefined} aria-describedby={description} />
   return <div className={`field ${className}`}>
     {label && <label htmlFor={id}>{label}</label>}
-    {leadingIcon ? <div className="field__control field__control--leading-icon">
-      <span className="field__leading-icon" aria-hidden="true">{leadingIcon}</span>
-      <Tag {...props} id={id} aria-invalid={error ? true : undefined} aria-describedby={description} />
-    </div> : <Tag {...props} id={id} aria-invalid={error ? true : undefined} aria-describedby={description} />}
+    {singleSelect || leadingIcon ? <div className={`field__control${leadingIcon ? ' field__control--leading-icon' : ''}${singleSelect ? ' field__control--select' : ''}`}>
+      {leadingIcon && <span className="field__leading-icon" aria-hidden="true">{leadingIcon}</span>}
+      {control}
+      {singleSelect && <ChevronDown className="field__chevron" size={20} aria-hidden="true" />}
+    </div> : control}
     {hint && <small id={`${id}-hint`} className="field__hint">{hint}</small>}
     {error && <small id={`${id}-error`} className="field__error" role="alert">{error}</small>}
   </div>
