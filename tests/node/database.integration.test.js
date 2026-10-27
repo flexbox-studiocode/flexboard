@@ -38,7 +38,8 @@ integration('PostgreSQL migration, constraints, rollback, and seed isolation', a
     await closePool();
     await migrate();
     const first = await migrationStatus();
-    assert.equal(first.applied.length, 1);
+    assert.equal(first.applied.length, 2);
+    assert.equal(first.files.length, 2);
     await migrate();
     const second = await migrationStatus();
     assert.equal(second.applied.length, first.applied.length);

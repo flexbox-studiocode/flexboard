@@ -1,12 +1,33 @@
 # Usulan kontrak API frontend FlexBoard
 
-Status: **PROPOSED — belum disepakati Kiandra/pemilik produk**.
-Dokumen ini bukan bukti endpoint tersedia. Implementasi saat ini tidak memanggil endpoint domain di bawah.
+Status: **AUTH TERSEDIA — kontrak domain lain tetap proposed**.
+Endpoint auth di bawah telah dibuat sebagai Vercel serverless handler. Endpoint domain lainnya belum tersedia.
 
 ## Kontrak yang tersedia
 
 `GET /api/health` mengembalikan `{ "status": "ok", "service": "flexboard-api" }`.
-Belum tersedia URL development, kontrak autentikasi, atau API domain.
+
+Auth menggunakan Better Auth `1.7.14` pada origin yang sama:
+
+- `POST /api/auth/sign-in/email` — body `{ "email": string, "password": string }`; membuat session cookie HttpOnly.
+- `POST /api/auth/sign-out` — mencabut session aktif dan menghapus cookie.
+- `GET /api/auth/get-session` — session Better Auth mentah untuk client library.
+- `GET /api/auth/me` — profil FlexBoard tervalidasi dan capabilities.
+
+Login gagal mengembalikan error 4xx dari Better Auth tanpa detail credential. `/api/auth/me` mengembalikan 401 untuk guest, session expired/revoked, atau profile inactive. Cookie tidak boleh dibaca JavaScript dan tidak disimpan localStorage. Signup publik dinonaktifkan.
+
+Contoh `/api/auth/me` sukses:
+
+```json
+{
+  "data": {
+    "user": { "id": "profile-uuid", "authSubject": "auth-user-id", "email": "member@example.com", "displayName": "Member", "role": "member" },
+    "capabilities": { "readProgress": true, "readTasks": true, "checklist": true, "comment": true, "createTask": false, "archiveTask": false, "manageAssignments": false, "manageMembers": false }
+  }
+}
+```
+
+Frontend harus mengirim `credentials: 'same-origin'`. API dan frontend lokal memakai same-origin Vercel dev/proxy; `BETTER_AUTH_URL` dan `BETTER_AUTH_SECRET` hanya backend. Tidak ada deployment production yang diverifikasi.
 
 ## Usulan endpoint
 

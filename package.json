@@ -14,10 +14,12 @@
     "test:node": "node --env-file=.env --test tests/node/*.test.js",
     "db:migrate": "node --env-file=.env scripts/db.mjs migrate",
     "db:migrate:status": "node --env-file=.env scripts/db.mjs status",
-    "db:seed": "node --env-file=.env scripts/db.mjs seed"
+    "db:seed": "node --env-file=.env scripts/db.mjs seed",
+    "auth:provision": "node --env-file=.env scripts/provision-auth-user.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "4.3.4",
+    "better-auth": "^1.7.14",
     "lucide-react": "latest",
     "pg": "^8.23.1",
     "react": "latest",
