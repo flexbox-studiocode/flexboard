@@ -12,6 +12,10 @@
 .field > label { font-size: .85rem; font-weight: 700; }
 .field input, .field select, .field textarea { width: 100%; min-width: 0; min-height: 46px; padding: .8rem .9rem; border: 1px solid #a8bbd2; border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-ink); }
 .field textarea { resize: vertical; min-height: 130px; }
+.field__control--select select { appearance: none; }
+.field .field__control.field__control--select select { padding-inline-end: 3rem; }
+.field__chevron { position: absolute; inset-inline-end: 1rem; top: 50%; transform: translateY(-50%); width: var(--icon-size); height: var(--icon-size); stroke-width: var(--icon-stroke); color: var(--color-ink); pointer-events: none; }
+.field__control--select:has(select:disabled) .field__chevron { color: var(--color-muted); }
 .field input:disabled, .field select:disabled, .field textarea:disabled { color: var(--color-muted); background: #f5f7fa; cursor: not-allowed; }
 .field [aria-invalid='true'] { border-color: var(--color-danger); }
 .field__hint { display: block; color: var(--color-muted); font-size: .75rem; line-height: 1.7; }
