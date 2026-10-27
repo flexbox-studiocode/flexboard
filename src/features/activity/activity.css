@@ -6,9 +6,7 @@
 .activity-page .feature-filter-label { display: none; }
 .activity-page .feature-filter-options { gap: .75rem; }
 .activity-page .feature-filter-options > :not(.feature-filter-label):not(button) { flex: 0 1 12rem; min-width: 0; }
-.activity-page .feature-filter-options .field { gap: .3rem; }
-.activity-page .feature-filter-options .field > label { font-size: var(--font-size-control); }
-.activity-page .feature-filter-options select, .activity-page .feature-filter-options input { min-height: 3rem; border-color: #87a9d2; font-family: var(--font-display); font-size: var(--font-size-control); }
+.activity-page .feature-filter-options > .button { min-height: 48px; }
 .activity-audit-note { display: flex; gap: .85rem; padding-top: 1.25rem; margin-top: 1.5rem; border-top: 1px solid var(--color-border); color: var(--color-muted); }
 .activity-audit-note > svg { flex-shrink: 0; color: var(--color-primary); margin-top: .1rem; }
 .activity-audit-note h3 { font-family: var(--font-display); color: var(--color-ink); font-size: .9rem; font-weight: 500; margin: 0 0 .45rem; }

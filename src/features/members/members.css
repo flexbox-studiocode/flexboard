@@ -6,8 +6,7 @@
 .members-page .feature-filter-search { max-width: 22rem; }
 .members-page .feature-filter-label { display: none; }
 .members-page .feature-filter-options > :not(.feature-filter-label):not(button) { flex: 0 1 13rem; min-width: 0; }
-.members-page .feature-filter-options .field > label { font-size: var(--font-size-control); }
-.members-page .feature-filter-options select { min-height: 3rem; border-color: #87a9d2; font-family: var(--font-display); font-size: var(--font-size-control); }
+.members-page .feature-filter-options > .button { min-height: 48px; }
 .members-access-note { display: flex; align-items: center; gap: 1rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); color: var(--color-muted); }
 .members-access-note > svg { flex-shrink: 0; color: var(--color-primary); }
 .members-access-note > div { flex: 1; }
