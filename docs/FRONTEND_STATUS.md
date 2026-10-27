@@ -105,6 +105,10 @@ Branch `feat/visual-refinement` mempertahankan baseline lokal `ae939fa`, termasu
 - Suite Node keseluruhan belum lulus pada environment ini: modul `pg` belum terpasang dan `.env` tidak tersedia untuk tes database/seed warisan. Tidak ada perubahan backend/dependensi untuk menutupi blocker tersebut.
 - Screenshot sebelum/sesudah tersedia lokal di direktori Temp `opencode/visual-refinement-before` dan `opencode/visual-refinement-after`; bukan hasil pixel-diff seluruh halaman.
 
+## Konsistensi kontrol filter
+
+Perbaikan `fix/consistent-field-controls` menyamakan tinggi/font/padding select dan tanggal pada Tugas, Progres Tim, Aktivitas dan Anggota. Chevron single-select diposisikan 16 px dari tepi dengan ruang teks 48 px; multiple/listbox tetap tanpa chevron. Perilaku native, disabled, label, validasi dan reset dipertahankan. Rincian: `FIELD_CONTROLS.md`.
+
 ## Git
 
 Branch penyelarasan: `feat/figma-alignment`, dari `feat/frontend-foundation`. Identitas: Rainer <rainersimanjuntak59@gmail.com>; autentikasi `Constanvel` diverifikasi sebelum implementasi.
