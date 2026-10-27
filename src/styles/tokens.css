@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Oxanium:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --color-primary: #4083c4;
+  --color-primary-dark: #3269a6;
+  --color-primary-soft: #e9f1fb;
+  --color-ink: #232b36;
+  --color-muted: #626d7b;
+  --color-border: #ccd7e5;
+  --color-surface: #fff;
+  --color-background: #ecf2f8;
+  --color-danger: #b42318;
+  --color-success: #176b46;
+  --color-warning: #835500;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Oxanium', system-ui, sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --radius-sm: 0.35rem;
+  --radius-md: 0.65rem;
+  --shadow-dialog: 0 20px 80px #17203324;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --layer-header: 10;
+}
