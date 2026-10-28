@@ -1,19 +1,6 @@
-import readline from 'node:readline';
-import { stdin as input, stdout as output } from 'node:process';
+import { input, password, select } from '@inquirer/prompts';
 import { getPool, closePool } from '../server/db/pool.js';
 import { provisionAuthUser } from '../server/provisioning.js';
-import { readHiddenInput } from './password-input.mjs';
-
-function question(rl, prompt) {
-  return new Promise((resolve, reject) => {
-    const onError = error => reject(error);
-    rl.once('error', onError);
-    rl.question(prompt, value => {
-      rl.off('error', onError);
-      resolve(value);
-    });
-  });
-}
 
 async function main() {
   if (process.env.NODE_ENV === 'production') throw new Error('Provisioning is disabled in production.');
@@ -24,27 +11,25 @@ async function main() {
   if (!/^flexboard_(db|dev|development)$/.test(database)) throw new Error('Provisioning requires an approved local development database.');
 
   let client;
-  let rl;
   try {
-    rl = readline.createInterface({ input, output });
-    const name = (await question(rl, 'Nama tampilan: ')).trim();
-    const email = (await question(rl, 'Email: ')).trim();
-    const role = (await question(rl, 'Role (leader/member): ')).trim().toLowerCase();
-    rl.close();
-    rl = undefined;
+    const name = (await input({ message: 'Nama tampilan:', validate: value => value.trim() ? true : 'Nama tampilan wajib diisi.' })).trim();
+    const email = (await input({ message: 'Email:', validate: value => /^\S+@\S+\.\S+$/.test(value.trim().toLowerCase()) ? true : 'Email tidak valid.' })).trim();
+    const role = await select({ message: 'Role:', choices: [{ name: 'leader', value: 'leader' }, { name: 'member', value: 'member' }] });
+    const enteredPassword = await password({
+      message: 'Password:',
+      mask: '*',
+      toggleMask: false,
+      validate: value => value.length >= 8 ? true : 'Password minimal 8 karakter.',
+    });
 
-    const password = await readHiddenInput();
-    const validEmail = /^\S+@\S+\.\S+$/.test(email.toLowerCase());
-    if (!name || !validEmail || !['leader', 'member'].includes(role) || password.length < 8) throw new Error('Input provisioning tidak valid.');
     if (process.argv.includes('--dry-run')) {
       console.log('Input provisioning valid; tidak ada perubahan dibuat.');
       return;
     }
     client = await getPool().connect();
-    const userId = await provisionAuthUser({ client, email, name, role, password });
+    const userId = await provisionAuthUser({ client, email, name, role, password: enteredPassword });
     console.log(`Auth user berhasil ditautkan: ${userId}`);
   } finally {
-    rl?.close();
     client?.release();
     await closePool();
   }
