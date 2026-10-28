@@ -38,22 +38,37 @@ integration('Better Auth email/password session lifecycle and profile mapping', 
     assert.equal(credential.rowCount, 1);
     assert.equal(await verifyPassword({ hash: credential.rows[0].password, password: 'correct horse battery staple' }), true);
     assert.equal(await verifyPassword({ hash: credential.rows[0].password, password: 'wrong password' }), false);
-    await assert.rejects(auth.api.signInEmail({ body: { email, password: 'wrong password' } }));
-    const result = await auth.api.signInEmail({ body: { email, password: 'correct horse battery staple' }, headers: new Headers() });
-    assert.ok(result?.token);
-    const activeSession = await pool.query('SELECT 1 FROM "session" WHERE token=$1 AND "userId"=$2', [result.token, mapped.rows[0].auth_subject]);
+    await assert.rejects(auth.api.signInEmail({ body: { email, password: 'wrong password' }, headers: new Headers() }));
+    const signInResponse = await auth.api.signInEmail({
+      body: { email, password: 'correct horse battery staple' },
+      headers: new Headers(),
+      asResponse: true,
+    });
+    assert.equal(signInResponse.ok, true);
+    const cookie = signInResponse.headers.get('set-cookie');
+    assert.ok(cookie);
+    const sessionCookie = cookie.split(';', 1)[0];
+    const cookieHeaders = new Headers({ cookie: sessionCookie });
+    const signedInSession = await auth.api.getSession({ headers: cookieHeaders });
+    assert.ok(signedInSession?.user);
+    const activeSession = await pool.query('SELECT 1 FROM "session" WHERE "userId"=$1', [mapped.rows[0].auth_subject]);
     assert.equal(activeSession.rowCount, 1);
-    await auth.api.signOut({ headers: new Headers({ authorization: `Bearer ${result.token}` }) });
-    const revokedSession = await pool.query('SELECT 1 FROM "session" WHERE token=$1', [result.token]);
-    assert.equal(revokedSession.rowCount, 0);
-    const afterLogout = await auth.api.getSession({ headers: new Headers({ authorization: `Bearer ${result.token}` }) });
+    const signOutResponse = await auth.api.signOut({ headers: cookieHeaders, asResponse: true });
+    assert.equal(signOutResponse.ok, true);
+    const afterLogout = await auth.api.getSession({ headers: cookieHeaders });
     assert.equal(afterLogout, null);
     await pool.query('UPDATE profiles SET is_active=false WHERE id=$1', [profile.rows[0].id]);
-    const inactiveSession = await auth.api.signInEmail({ body: { email, password: 'correct horse battery staple' }, headers: new Headers() });
-    assert.ok(inactiveSession?.token);
+    const inactiveSessionResponse = await auth.api.signInEmail({ body: { email, password: 'correct horse battery staple' }, headers: new Headers(), asResponse: true });
+    assert.equal(inactiveSessionResponse.ok, true);
+    const inactiveCookie = inactiveSessionResponse.headers.get('set-cookie');
+    assert.ok(inactiveCookie);
+    const inactiveCookieHeaders = new Headers({ cookie: inactiveCookie.split(';', 1)[0] });
     const inactiveProfile = await pool.query('SELECT is_active FROM profiles WHERE id=$1', [profile.rows[0].id]);
     assert.equal(inactiveProfile.rows[0].is_active, false);
-    await auth.api.signOut({ headers: new Headers({ authorization: `Bearer ${inactiveSession.token}` }) });
+    assert.ok((await auth.api.getSession({ headers: inactiveCookieHeaders }))?.user);
+    const inactiveSignOut = await auth.api.signOut({ headers: inactiveCookieHeaders, asResponse: true });
+    assert.equal(inactiveSignOut.ok, true);
+    assert.equal(await auth.api.getSession({ headers: inactiveCookieHeaders }), null);
     await pool.query('DELETE FROM profiles WHERE id=$1', [profile.rows[0].id]);
   } finally {
     await closePool();
