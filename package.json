@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "npx vercel dev --local-config vercel.dev.json --listen 3000",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -16,7 +17,9 @@
     "db:migrate:status": "node --env-file=.env scripts/db.mjs status",
     "db:seed": "node --env-file=.env scripts/db.mjs seed",
     "auth:provision": "node --env-file=.env scripts/provision-auth-user.mjs",
-    "auth:reset-password": "node --env-file=.env scripts/reset-auth-password.mjs"
+    "auth:reset-password": "node --env-file=.env scripts/reset-auth-password.mjs",
+    "auth:test-http": "node scripts/test-auth-http.mjs",
+    "auth:diagnose-runtime": "node --env-file=.env scripts/diagnose-auth-runtime.mjs"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.7.5",
