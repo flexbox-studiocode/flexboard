@@ -10,15 +10,17 @@ const safe = async (response) => {
   let payload = null;
   try { payload = await response.json(); } catch {}
   const error = payload?.error;
-  return { status: response.status, type, code: error?.code || 'NONE', message: typeof error?.message === 'string' ? error.message : 'none' };
+  const source = error && typeof error === 'object' ? error : payload;
+  return { status: response.status, type, code: typeof source?.code === 'string' ? source.code : 'NONE', message: typeof source?.message === 'string' ? source.message : 'none' };
 };
 try {
-  const signIn = await fetch(`${baseUrl}/api/auth/sign-in/email`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password: secret }), signal: controller.signal });
+  const signIn = await fetch(`${baseUrl}/api/auth/sign-in/email`, { method: 'POST', headers: { 'content-type': 'application/json', origin: baseUrl, referer: `${baseUrl}/login` }, body: JSON.stringify({ email, password: secret }), signal: controller.signal });
   const result = await safe(signIn);
   console.log(`sign-in: status=${result.status} content-type=${result.type} code=${result.code} message=${result.message}`);
   if (!signIn.ok) process.exitCode = 1;
   else {
-    const cookie = signIn.headers.get('set-cookie');
+    const setCookies = typeof signIn.headers.getSetCookie === 'function' ? signIn.headers.getSetCookie() : (signIn.headers.get('set-cookie') || '').split(/,(?=[^;]+=[^;]+)/).filter(Boolean);
+    const cookie = setCookies.map((value) => value.split(';', 1)[0]).join('; ');
     const me = await fetch(`${baseUrl}/api/auth/me`, { headers: cookie ? { cookie } : {}, signal: controller.signal });
     const meType = me.headers.get('content-type') || 'unknown';
     let meBody = null;
