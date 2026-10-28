@@ -7,6 +7,7 @@ import Footer from './Footer.jsx'
 import ProfileDialog from '../../features/members/ProfileDialog.jsx'
 import logo from '../../assets/brand/flexbox.png'
 import searchIcon from '../../assets/brand/banner-search.svg'
+import { useAuth } from '../../features/auth/AuthContext.jsx'
 
 const navigation = [['/', 'Beranda'], ['/tasks', 'Tugas Kami'], ['/team-progress', 'Progres Tim'], ['/members', 'Anggota'], ['/activity', 'Aktivitas']]
 
@@ -32,6 +33,7 @@ export function WelcomeBanner() {
 export default function WorkspaceLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const auth = useAuth()
   const trigger = useRef(null)
   const location = useLocation()
   useEffect(() => {
@@ -43,11 +45,11 @@ export default function WorkspaceLayout() {
   const showBanner = ['/', '/tasks', '/tasks/new', '/team-progress'].includes(location.pathname)
   return <div className="site-frame">
     <a href="#workspace-main" className="skip-link">Lewati ke konten utama</a>
-    <header className="site-header"><div className="site-header__inner"><Brand /><div className="desktop-navigation"><Navigation /></div><div className="header-account"><span className="header-account__mark"><CircleDashed size={21} aria-hidden="true" /></span><div><strong>Pratinjau UI</strong><span>Belum masuk</span></div><IconButton label="Buka profil akun" aria-haspopup="dialog" aria-expanded={profileOpen} onClick={() => setProfileOpen(true)}><CircleDashed size={21} aria-hidden="true" /></IconButton></div><span ref={trigger} className="mobile-menu-trigger"><IconButton label="Buka menu navigasi" aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={23} /></IconButton></span></div></header>
+    <header className="site-header"><div className="site-header__inner"><Brand /><div className="desktop-navigation"><Navigation /></div><div className="header-account"><span className="header-account__mark"><CircleDashed size={21} aria-hidden="true" /></span><div><strong>{auth.status === 'authenticated' ? auth.profile.displayName || auth.profile.email : auth.status === 'loading' ? 'Memeriksa sesi…' : auth.status === 'unavailable' ? 'Layanan tidak tersedia' : 'Pratinjau UI'}</strong><span>{auth.status === 'authenticated' ? auth.profile.role : auth.status === 'anonymous' ? 'Belum masuk' : 'Status sesi belum tersedia'}</span></div><IconButton label="Buka profil akun" aria-haspopup="dialog" aria-expanded={profileOpen} onClick={() => setProfileOpen(true)}><CircleDashed size={21} aria-hidden="true" /></IconButton></div><span ref={trigger} className="mobile-menu-trigger"><IconButton label="Buka menu navigasi" aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={23} /></IconButton></span></div></header>
     <Modal open={menuOpen} onClose={() => { setMenuOpen(false); trigger.current?.querySelector('button')?.focus() }} title="Navigasi workspace" className="mobile-navigation"><Navigation onNavigate={() => setMenuOpen(false)} /><Link to="/login" className="button button--secondary" onClick={() => setMenuOpen(false)}>Halaman masuk</Link></Modal>
-    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
+    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} auth={auth} />
     <main id="workspace-main" className="workspace-main" tabIndex={-1}>{showBanner && <WelcomeBanner />}<Outlet /></main>
-    <aside className="integration-notice" aria-label="Status pengembangan"><div><p>Pratinjau antarmuka tanpa sesi dan data produksi. Integrasi API belum tersedia.</p><Link to="/login">Status login</Link></div></aside>
+    <aside className="integration-notice" aria-label="Status sesi"><div><p>{auth.status === 'authenticated' ? `Sesi aktif sebagai ${auth.profile.role}.` : auth.status === 'unavailable' ? 'Layanan autentikasi tidak tersedia.' : 'Belum ada sesi aktif.'}</p><Link to={auth.status === 'authenticated' ? '/' : '/login'}>{auth.status === 'authenticated' ? 'Workspace' : 'Masuk'}</Link></div></aside>
     <Footer />
   </div>
 }

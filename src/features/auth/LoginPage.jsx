@@ -5,9 +5,11 @@ import Footer from '../../components/layout/Footer.jsx'
 import { Badge, Button, Input } from '../../components/ui/index.js'
 import logo from '../../assets/brand/flexbox.png'
 import './auth.css'
+import { useAuth } from './AuthContext.jsx'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { refresh } = useAuth()
   const [error, setError] = useState('')
   const [diagnostic, setDiagnostic] = useState('')
   const [busy, setBusy] = useState(false)
@@ -39,6 +41,7 @@ export default function LoginPage() {
         setError('Sesi tidak dapat diverifikasi.')
         return
       }
+      await refresh()
       navigate('/', { replace: true })
     } catch { setDiagnostic(import.meta.env.DEV ? 'NETWORK_ERROR' : ''); setError('Login tidak dapat diproses. Periksa koneksi lalu coba lagi.')
     } finally { setBusy(false) }
