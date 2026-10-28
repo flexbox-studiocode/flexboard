@@ -15,7 +15,8 @@
     "db:migrate": "node --env-file=.env scripts/db.mjs migrate",
     "db:migrate:status": "node --env-file=.env scripts/db.mjs status",
     "db:seed": "node --env-file=.env scripts/db.mjs seed",
-    "auth:provision": "node --env-file=.env scripts/provision-auth-user.mjs"
+    "auth:provision": "node --env-file=.env scripts/provision-auth-user.mjs",
+    "auth:reset-password": "node --env-file=.env scripts/reset-auth-password.mjs"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.7.5",
