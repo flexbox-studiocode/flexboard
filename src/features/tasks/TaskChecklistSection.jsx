@@ -10,7 +10,7 @@ export default function TaskChecklistSection({ items, progress, onItemChange, on
     <ProgressBar value={available ? progress : undefined} label="Progres tugas" unavailableLabel="Progres belum tersedia" />
     {!available ? <UnavailableState title="Checklist belum tersedia" description="Checklist tidak dapat ditampilkan atau diubah sebelum data tugas dan izin berhasil diverifikasi." />
       : items.length === 0 ? <EmptyState title="Belum ada checklist" description="Pekerjaan belum memiliki checklist aktif. Tidak ada progres yang disimpulkan dari keadaan ini." />
-        : <ul className="task-checklist-list">{items.map(item => <li key={item.id}><ChecklistItem title={item.title} completed={item.completed} canEdit={item.canEdit === true} saving={savingItemId === item.id} assigneeLabel={item.assigneeLabel} onChange={onItemChange ? checked => onItemChange(item.id, checked) : undefined} /></li>)}</ul>}
+        : <ul className="task-checklist-list">{items.map(item => <li key={item.id}><ChecklistItem title={item.title} completed={item.completed ?? item.is_completed} canEdit={item.canEdit === true} saving={savingItemId === item.id} assigneeLabel={item.assigneeLabel || item.assignee_name || item.assignee_id} onChange={onItemChange ? checked => onItemChange(item.id, checked) : undefined} /></li>)}</ul>}
     <div className="task-disabled-actions"><Button variant="secondary" disabled={!available || !canAdd || !onAdd || savingItemId != null} onClick={onAdd}>Tambah checklist</Button></div>
   </Panel>
 }

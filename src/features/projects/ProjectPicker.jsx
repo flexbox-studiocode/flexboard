@@ -1,26 +1,16 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Button, Select } from '../../components/ui/index.js'
+import { listProjects } from '../tasks/taskApi.js'
 import ProjectDialog from './ProjectDialog.jsx'
-import ProjectArchiveDialog from './ProjectArchiveDialog.jsx'
 import './projects.css'
 
-/** Public preview, not a project list or evidence of management permissions. */
-export default function ProjectPicker() {
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const [archiveOpen, setArchiveOpen] = useState(false)
-  const projectHintId = useId()
-
+export default function ProjectPicker({ value, onChange }) {
+  const [projects, setProjects] = useState([]); const [open, setOpen] = useState(false); const [error, setError] = useState(''); const hintId = useId()
+  function load() { listProjects().then(data => setProjects(data?.projects || [])).catch(() => setError('Daftar proyek gagal dimuat.')) }
+  useEffect(load, [])
   return <div className="project-picker">
-    <div className="project-picker__controls">
-      <Select label="Proyek" value="" disabled aria-describedby={projectHintId}><option value="">Pilihan proyek belum tersedia</option></Select>
-      <Button type="button" variant="secondary" onClick={() => setPreviewOpen(true)}>Pratinjau form proyek</Button>
-    </div>
-    <small id={projectHintId} className="field__hint">Daftar proyek dan hak akses belum tersedia.</small>
-    <p className="feature-note">Pratinjau dapat dibuka tanpa memilih proyek. Ini bukan akses pengelolaan proyek; input tidak disimpan dan dibuang saat ditutup.</p>
-    <details className="project-picker__previews"><summary>Pratinjau struktur pengelolaan</summary><div className="cluster"><Button variant="ghost" onClick={() => setEditOpen(true)}>Pratinjau edit proyek</Button><Button variant="ghost" onClick={() => setArchiveOpen(true)}>Pratinjau konfirmasi arsip</Button></div></details>
-    <ProjectDialog open={previewOpen} onClose={() => setPreviewOpen(false)} />
-    <ProjectDialog open={editOpen} onClose={() => setEditOpen(false)} mode="edit" />
-    <ProjectArchiveDialog open={archiveOpen} onClose={() => setArchiveOpen(false)} />
+    <div className="project-picker__controls"><Select label="Proyek" value={value || ''} onChange={e => onChange?.(e.target.value)} aria-describedby={hintId}><option value="">Pilih proyek</option>{projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</Select><Button type="button" variant="secondary" onClick={() => setOpen(true)}>Buat proyek</Button></div>
+    <small id={hintId} className="field__hint">{error || 'Proyek aktif yang dapat Anda akses.'}</small>
+    <ProjectDialog open={open} onClose={() => setOpen(false)} onSaved={load} />
   </div>
 }

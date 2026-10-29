@@ -1,21 +1,19 @@
-import { useId, useState } from 'react'
-import { Button, Input, Select, Textarea, UnavailableState } from '../../components/ui/index.js'
+import { useEffect, useId, useState } from 'react'
+import { createProject, listMembers } from '../tasks/taskApi.js'
+import { Button, Input, Textarea, UnavailableState } from '../../components/ui/index.js'
 import './projects.css'
 
 /** Local preview only. Edit mode never assumes project data or authorization. */
-export default function ProjectForm({ mode = 'new', onClose }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
+export default function ProjectForm({ mode: _mode = 'new', onClose, onSaved }) {
+  const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [members, setMembers] = useState([]); const [selected, setSelected] = useState([]); const [error, setError] = useState(''); const [saving, setSaving] = useState(false)
   const noteId = useId()
-  const editing = mode !== 'new'
-
-  return <form className="project-dialog-form" aria-describedby={noteId} onSubmit={event => event.preventDefault()}>
-    <p className="feature-note" id={noteId}>Pratinjau ini tidak mengirim atau menyimpan data. Input lokal dibuang saat dialog ditutup atau mode berubah; membuka kembali form akan menampilkan kolom kosong.</p>
-    {editing && <UnavailableState title="Data proyek belum dapat dimuat" description="Data tersimpan dan hak edit belum dapat diverifikasi. Kolom kosong di bawah bukan data proyek dan tidak dapat diedit." />}
-    <Input label="Nama proyek" name="name" value={name} onChange={event => setName(event.target.value)} placeholder="Tuliskan nama proyek" autoComplete="off" disabled={editing} />
-    <Textarea label="Deskripsi proyek" name="description" value={description} onChange={event => setDescription(event.target.value)} rows={4} placeholder="Jelaskan tujuan dan ruang lingkup proyek" disabled={editing} />
-    <Select label="Status proyek" value="" disabled hint="Pilihan status menunggu kesepakatan kontrak layanan."><option value="">Pilihan belum dikonfirmasi</option></Select>
-    <UnavailableState title="Pengelolaan proyek belum aktif" description="Layanan proyek dan otorisasi pengguna belum terhubung. Pembuatan dan perubahan proyek belum tersedia." />
-    <div className="project-dialog-actions"><Button type="button" variant="secondary" onClick={onClose}>Tutup</Button><Button type="submit" disabled>Simpan proyek</Button></div>
+  useEffect(() => { listMembers().then(data => setMembers(data?.members || [])).catch(() => setError('Daftar anggota gagal dimuat.')) }, [])
+  async function submit(event) { event.preventDefault(); if (!name.trim()) return setError('Nama proyek wajib diisi.'); setSaving(true); setError(''); try { const result = await createProject({ name, description, memberIds: selected }); onSaved?.(result); onClose() } catch (e) { setError(e.message === 'HTTP_403' ? 'Anda tidak memiliki izin.' : 'Proyek gagal disimpan.') } finally { setSaving(false) } }
+  return <form className="project-dialog-form" aria-describedby={noteId} onSubmit={submit}>
+    <p className="feature-note" id={noteId}>Pilih anggota aktif yang benar-benar bergabung dalam proyek.</p>{error && <UnavailableState title={error} />}
+    <Input label="Nama proyek" name="name" value={name} onChange={event => setName(event.target.value)} placeholder="Tuliskan nama proyek" autoComplete="off" required />
+    <Textarea label="Deskripsi proyek" name="description" value={description} onChange={event => setDescription(event.target.value)} rows={4} placeholder="Jelaskan tujuan dan ruang lingkup proyek" />
+    <div className="field"><label htmlFor="project-members">Anggota proyek</label><select id="project-members" multiple value={selected} onChange={e => setSelected([...e.target.selectedOptions].map(o => o.value))}>{members.filter(m => m.role === 'member' && m.is_active !== false).map(m => <option key={m.id} value={m.id}>{m.display_name || m.displayName}</option>)}</select></div>
+    <div className="project-dialog-actions"><Button type="button" variant="secondary" onClick={onClose}>Batal</Button><Button type="submit" disabled={saving}>{saving ? 'Menyimpan…' : 'Simpan proyek'}</Button></div>
   </form>
 }

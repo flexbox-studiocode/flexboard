@@ -13,7 +13,8 @@ export function capabilities(user) {
 export async function getAuthenticatedProfile(request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) return null;
-  const result = await getPool().query(`SELECT id, display_name, role, is_active FROM profiles WHERE auth_subject=$1`, [session.user.id]);
+  const result = await getPool().query(`SELECT id, display_name, role, is_active
+    FROM profiles WHERE auth_subject=$1 AND is_active=true`, [session.user.id]);
   const profile = result.rows[0];
   if (!profile?.is_active) return null;
   return { session, profile };

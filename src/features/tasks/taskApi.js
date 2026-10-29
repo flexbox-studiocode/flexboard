@@ -16,6 +16,7 @@ export const updateProjectMembers = (projectId, memberIds) => requestTaskApi(`/p
 export const createTask = payload => requestTaskApi('/tasks', { method: 'POST', body: JSON.stringify(payload) })
 export const updateTask = (id, payload) => requestTaskApi(`/tasks/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) })
 export const updateChecklistItem = (taskId, itemId, completed) => requestTaskApi(`/tasks/${encodeURIComponent(taskId)}/checklists/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: JSON.stringify({ completed }) })
+export const updateChecklist = (taskId, itemId, item) => requestTaskApi(`/tasks/${encodeURIComponent(taskId)}/checklists/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: JSON.stringify(item) })
 export const archiveTask = id => requestTaskApi(`/tasks/${encodeURIComponent(id)}/archive`, { method: 'POST' })
 export const listChecklist = taskId => requestTaskApi(`/tasks/${encodeURIComponent(taskId)}/checklists`)
 export const addChecklist = (taskId, items) => requestTaskApi(`/tasks/${encodeURIComponent(taskId)}/checklists`, { method: 'POST', body: JSON.stringify({ items }) })

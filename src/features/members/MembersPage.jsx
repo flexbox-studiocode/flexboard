@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { requestTaskApi } from '../tasks/taskApi.js'
 import { ShieldCheck } from 'lucide-react'
 import { Button, PageHeader, Panel } from '../../components/ui/index.js'
@@ -10,12 +11,17 @@ import MemberCard from './MemberCard.jsx'
 import './members.css'
 
 export default function MembersPage({ members } = {}) {
+  const { pathname, search } = useLocation()
+  const scope = `${pathname}${search}`
   const [managementPreviewOpen, setManagementPreviewOpen] = useState(false)
-  const [apiState, setApiState] = useState({ status: 'loading' })
+  const [apiState, setApiState] = useState({ status: 'loading', scope })
   useEffect(() => {
     if (members !== undefined) return
     let active = true
-    requestTaskApi('/members').then(data => active && setApiState({ status: 'success', items: data?.members || data?.items || (Array.isArray(data) ? data : []) })).catch(() => active && setApiState({ status: 'error' }))
+    requestTaskApi('/members').then(data => {
+      if (!Array.isArray(data?.members)) throw new Error('Invalid members response')
+      if (active) setApiState({ status: 'success', items: data.members, scope })
+    }).catch(() => active && setApiState({ status: 'error', scope }))
     return () => { active = false }
   }, [members])
   const state = useScopedCollection(members !== undefined ? members : apiState)
