@@ -33,4 +33,11 @@
   --space-8: 2rem;
   --space-12: 3rem;
   --layer-header: 10;
+  --motion-fast: 120ms;
+  --motion-press: 80ms;
+  --motion-normal: 180ms;
+  --motion-enter: 220ms;
+  --motion-item: 140ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-distance: 8px;
 }

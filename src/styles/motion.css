@@ -1,0 +1,42 @@
+/* Static content is the default. Motion never controls focus, visibility, or data lifetime. */
+@keyframes motion-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes motion-dialog-in {
+  from { opacity: 0; transform: translateY(var(--motion-distance)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes motion-item-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button, .banner-search button {
+    transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease), transform var(--motion-press) var(--motion-ease);
+  }
+  .button:not(:disabled):not([aria-disabled='true']):active,
+  .banner-search button:not(:disabled):active { transform: translateY(1px); }
+  .workspace-nav a, .task-card h3 a, .feature-back-link, .auth-preview-link {
+    transition: color var(--motion-fast) var(--motion-ease);
+  }
+  .workspace-nav a.active::after { animation: motion-fade-in var(--motion-fast) var(--motion-ease); }
+  .field input:not([aria-invalid='true']), .field textarea:not([aria-invalid='true']), .banner-search input {
+    transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease);
+  }
+  .motion-route, .auth-main { animation: motion-fade-in var(--motion-enter) var(--motion-ease); }
+  .modal[open] { animation: motion-dialog-in var(--motion-normal) var(--motion-ease); }
+  .modal[open]::backdrop { animation: motion-fade-in var(--motion-normal) var(--motion-ease); }
+  .checklist-draft__row { animation: motion-item-in var(--motion-item) var(--motion-ease); }
+  /* A focused input must never wait for its insertion effect. */
+  .checklist-draft__row[data-motion-settled='true'], .motion-route[data-motion-settled='true'], .auth-main[data-motion-settled='true'] { animation: none; }
+}
+
+/* Hover affordances are limited to controls and actual links, never whole static cards. */
+@media (hover: hover) and (pointer: fine) {
+  .button.icon-button:not(:disabled):not([aria-disabled='true']):hover { background-color: var(--color-primary-soft); }
+  .banner-search button:not(:disabled):hover { background-color: var(--color-primary-dark); }
+}
+.field input:not(:disabled):not([aria-invalid='true']):focus-visible, .field textarea:not(:disabled):not([aria-invalid='true']):focus-visible { border-color: var(--color-primary-dark); }
+@media (prefers-reduced-motion: reduce) {
+  .button, .banner-search button, .banner-search input, .workspace-nav a,
+  .field input, .field textarea, .task-card h3 a, .feature-back-link, .auth-preview-link { transition: none; }
+}
