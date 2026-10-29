@@ -22,7 +22,7 @@ const authRewrite = config.rewrites?.find(({ destination }) => destination.start
 
 test('production SPA rewrite excludes API paths', () => {
   for (const path of ['/api', '/api/health', '/api/auth/me', '/api/auth/sign-in/email']) {
-    assert.doesNotMatch(path, new RegExp(frontendRewrite.source))
+    assert.doesNotMatch(path, new RegExp(`^(?:${frontendRewrite.source})$`))
   }
 })
 
@@ -38,6 +38,6 @@ test('development config delegates to Vite without SPA catch-all routing', () =>
 
 test('frontend deep links use production HTML fallback', () => {
   for (const path of ['/', '/login', '/tasks', '/team-progress', '/unknown']) {
-    assert.match(path, new RegExp(frontendRewrite.source))
+    assert.match(path, new RegExp(`^(?:${frontendRewrite.source})$`))
   }
 })

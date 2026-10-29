@@ -1,6 +1,6 @@
 # Status frontend FlexBoard
 
-Tanggal: 27 Oktober 2026. Status: **fondasi dan pratinjau UI; bukan MVP end-to-end**.
+Tanggal pembaruan: 29 Oktober 2026. Status: **fondasi UI dengan integrasi sesi pada baseline terbaru; bukan MVP domain end-to-end**. Catatan paket 27 Oktober di bawah bersifat historis; perubahan autentikasi baseline dan paket motion dijelaskan pada bagian terbaru.
 
 ## Yang tersedia
 
@@ -142,6 +142,19 @@ Paket `refactor/frontend-integration-readiness` berangkat dari working tree bers
 - Empat tes browser baru menguji transisi state, retry keyboard, isolasi query lokal, dan teks tanpa spasi panjang pada 320/390/768/1440 px. Tidak ada request API domain atau exception pada harness. Screenshot Tugas mobile 390 px dan form tugas desktop 1440 px diperiksa; komposisi tetap terjaga. Tes ini memeriksa geometri/perilaku, bukan screenshot-diff atau bukti integrasi API.
 - Tidak ada perubahan endpoint, middleware, database, migration, seed, dependensi, `.env`, atau repository bersarang `flexboard/`. Suite database tidak dijalankan; persetujuan kontrak API/auth dan environment backend tetap blocker. Temuan audit dependensi sebelumnya tidak dievaluasi ulang oleh paket ini.
 - Commit logis: `c57e3a1` (state Tasks bersama), `c7301e2` (tiga halaman daftar), `3b62c19` (controlled draft), dan `091ff72` (regresi browser/wrapping metadata). Koreksi route tes Progres Tim serta dokumentasi disatukan dalam commit penutup setelah validasi. Staging memakai path eksplisit; satu push di akhir, tanpa merge ke `main`, force push, atau bypass hook.
+
+## Motion frontend — 29 Oktober 2026
+
+Branch `feat/frontend-motion` dibuat dari `origin/main` pada `7ced0be`, bukan baseline pratinjau lama. Baseline kini sudah memiliki form login aktif, provider sesi, profil berdasarkan respons server, dan logout. Paket ini mempertahankan implementasi tersebut tanpa mengubah auth/backend. Pernyataan login disabled/tanpa request API pada paket historis di atas tidak menggambarkan baseline terbaru; domain tugas/proyek/progres masih belum terintegrasi.
+
+- Token motion bersama, transisi tombol/link/input, pressed 1 px pada tombol aktif, entrance dialog/backdrop, fade konten route/login, dan insertion checklist tersedia tanpa dependency baru.
+- Boundary route hanya memakai pathname, bukan query atau status auth. Header/banner/provider tidak di-remount; fokus dan penggantian data tidak menunggu animasi keluar.
+- Reveal saat scroll dibatasi pada panduan sekunder form tugas. Konten default tetap terlihat, observer sekali per mount, fokus/reduced motion membatalkan efek, dan API browser yang tidak tersedia kembali ke tampilan statis.
+- Reduced motion, pembatalan permanen setelah fokus, perubahan preferensi, dan cleanup listener diuji. Native select serta geometri kontrol tetap dipertahankan.
+- Tes lama diselaraskan dengan sesi terbaru; request API yang diizinkan pada regresi halaman hanya GET `/api/auth/me`, bukan mutasi domain. Assertion konfigurasi deployment diperbaiki agar mencocokkan seluruh path; konfigurasi produksi tetap tidak berubah.
+- Validasi akhir: 178 tes unit dalam 21 file lulus (`npm test -- --maxWorkers=1`, 101,15 detik); 67 tes Chromium lulus (3,7 menit) pada server terisolasi port 5186; production build dan empat tes konfigurasi deployment lulus. Lint tanpa error dengan satu warning baseline `react-refresh/only-export-components` di `src/features/auth/AuthContext.jsx:31:17`.
+- Screenshot login desktop 1440 px dan form tugas mobile 390 px diperiksa tanpa klaim pixel-perfect. Dependency backend lokal `better-auth`, `better-auth/node`, dan `pg` belum teresolusi; auth/database nyata, lintas browser, dan audit performa terukur belum diverifikasi. Backend, dependency, konfigurasi deployment, `.env`, dan repository bersarang tidak diubah.
+- Spesifikasi, kondisi pembatalan, fallback, dan batas pengujian: [FRONTEND_MOTION.md](FRONTEND_MOTION.md).
 
 ## Git
 
