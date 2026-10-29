@@ -3,7 +3,7 @@ import { createProject, listMembers } from '../tasks/taskApi.js'
 import { Button, Input, Textarea, UnavailableState } from '../../components/ui/index.js'
 import './projects.css'
 
-/** Local preview only. Edit mode never assumes project data or authorization. */
+/** Project creation form backed by the project API. */
 export default function ProjectForm({ mode: _mode = 'new', onClose, onSaved }) {
   const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [category, setCategory] = useState('corporate_enterprise'); const [members, setMembers] = useState([]); const [selected, setSelected] = useState([]); const [error, setError] = useState(''); const [saving, setSaving] = useState(false)
   const noteId = useId()
