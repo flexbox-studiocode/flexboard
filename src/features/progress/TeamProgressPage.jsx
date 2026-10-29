@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Plus } from 'lucide-react'
+import { requestTaskApi } from '../tasks/taskApi.js'
 import { Button, PageHeader, Panel } from '../../components/ui/index.js'
 import { FilterToolbar } from '../common/FeatureUI.jsx'
 import CollectionState from '../common/CollectionState.jsx'
@@ -7,7 +9,14 @@ import MemberProgressList from './MemberProgressList.jsx'
 import './progress.css'
 
 export default function TeamProgressPage({ progress } = {}) {
-  const state = useScopedCollection(progress)
+  const [apiState, setApiState] = useState({ status: 'loading' })
+  useEffect(() => {
+    if (progress !== undefined) return
+    let active = true
+    requestTaskApi('/progress/team').then(data => active && setApiState({ status: 'success', items: data?.items || data || [] })).catch(() => active && setApiState({ status: 'error' }))
+    return () => { active = false }
+  }, [progress])
+  const state = useScopedCollection(progress !== undefined ? progress : apiState)
 
   return <div className="feature-page progress-page">
     <PageHeader title="Progres Tim" description="Lihat perkembangan setiap anggota di seluruh tugas." actions={<Button disabled title="Layanan tugas dan izin akun belum tersedia"><Plus size={18} aria-hidden="true" />Tambah tugas</Button>} />

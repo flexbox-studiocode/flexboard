@@ -17,7 +17,10 @@ export async function canReadProject(user, projectId) {
   return result.rowCount > 0;
 }
 export async function canReadTask(user, taskId) {
-  const result = await getPool().query('SELECT 1 FROM tasks t JOIN project_members pm ON pm.project_id=t.project_id WHERE t.id=$1 AND pm.user_id=$2 AND t.archived_at IS NULL', [taskId, user.id]);
+  const result = await getPool().query(`SELECT 1 FROM tasks t JOIN projects p ON p.id=t.project_id
+    LEFT JOIN project_members pm ON pm.project_id=t.project_id AND pm.user_id=$2
+    LEFT JOIN task_assignees ta ON ta.task_id=t.id AND ta.user_id=$2
+    WHERE t.id=$1 AND t.archived_at IS NULL AND (p.created_by=$2 OR pm.user_id IS NOT NULL OR ta.user_id IS NOT NULL)`, [taskId, user.id]);
   return result.rowCount > 0;
 }
 export const canUpdateChecklist = canReadTask;

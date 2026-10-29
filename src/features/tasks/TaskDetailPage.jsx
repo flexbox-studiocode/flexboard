@@ -1,41 +1,28 @@
-import { ArrowLeft, CircleHelp, FileText, LockKeyhole } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
-import { Button, PageHeader, Panel, UnavailableState } from '../../components/ui/index.js'
-import { DataNotice, SectionHeading } from '../common/FeatureUI.jsx'
-import ActivityList from '../activity/ActivityList.jsx'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, FileText } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Button, PageHeader, Panel, Textarea, UnavailableState } from '../../components/ui/index.js'
+import { SectionHeading } from '../common/FeatureUI.jsx'
+import { useAuth } from '../auth/AuthContext.jsx'
 import TaskChecklistSection from './TaskChecklistSection.jsx'
 import TaskMetadata from './TaskMetadata.jsx'
+import { addComment, addUpdate, archiveTask, getTask, listComments, listUpdates, updateChecklistItem } from './taskApi.js'
 import './tasks.css'
 
+function listValue(value) { return value?.items || value || [] }
+function author(item) { return item.author?.name || item.user?.name || item.authorName || item.createdBy?.name || 'Anggota tim' }
+function time(item) { const value = item.createdAt || item.created_at || item.updatedAt; return value ? new Date(value).toLocaleString() : 'Waktu tidak tersedia' }
+
 export default function TaskDetailPage() {
-  const { id } = useParams()
-  return <div className="feature-page task-detail-page">
-    <Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} aria-hidden="true" />Kembali ke Tugas Kami</Link>
-    <PageHeader title="Detail tugas" description="Satu tugas bersama, progres masing-masing anggota dari checklist tersimpan." actions={<><Button variant="secondary" disabled>Edit tugas</Button><Button variant="secondary" disabled>Arsipkan tugas</Button></>} />
-    <Panel className="feature-panel task-overview">
-      <div className="task-overview__heading"><FileText size={23} aria-hidden="true" /><SectionHeading title="Informasi tugas" description="Metadata ditampilkan setelah tugas dan akses berhasil diverifikasi." /></div>
-      <TaskMetadata />
-      <section className="task-description" aria-labelledby="task-description-title"><h2 id="task-description-title">Deskripsi</h2><p className="muted">Deskripsi tugas belum tersedia.</p></section>
-      <UnavailableState title="Detail tugas belum dapat dimuat" description="Layanan tugas belum terhubung. Keberadaan tugas dan hak akses akun belum dapat diverifikasi; judul dan nilai metadata tidak dikarang." />
-      <div className="task-reference"><CircleHelp size={16} aria-hidden="true" /><p>Referensi URL: <code>{id}</code>. Referensi ini belum dikonfirmasi sebagai tugas yang dapat diakses.</p></div>
-    </Panel>
-    <div className="task-detail-layout">
-      <div className="stack">
-        <TaskChecklistSection />
-        <Panel className="feature-panel task-update-panel" aria-labelledby="task-report-title">
-          <div className="task-members__heading"><h2 id="task-report-title">Laporan pekerjaan &amp; kendala</h2><p>Data anggota menunggu verifikasi akses.</p></div>
-          <div className="task-report-surface" aria-label="Panel laporan pekerjaan">
-            <SectionHeading title="Tulis / update laporan" description="Apa yang sudah dikerjakan? Ada kendala?" />
-            <UnavailableState title="Laporan belum dapat dimuat" description="Tidak ada laporan yang ditampilkan atau dikirim. Form laporan menunggu keputusan produk, tugas terverifikasi, dan layanan penyimpanan." />
-            <p className="task-update-panel__note"><LockKeyhole size={16} aria-hidden="true" />Tidak ada input persentase manual atau upload. Progres bersumber dari checklist yang tersimpan di server.</p>
-            <div className="task-report-actions"><Button disabled>Simpan laporan</Button></div>
-          </div>
-        </Panel>
-      </div>
-      <aside className="stack">
-        <DataNotice title="Perubahan harus tersimpan">Checklist hanya diperbarui setelah server memvalidasi akses dan menyimpan perubahan. Progres tidak diisi manual.</DataNotice>
-        <Panel className="feature-panel"><SectionHeading eyebrow="TASK HISTORY" title="Riwayat tugas" description="Aktor, tindakan, objek terkait, dan waktu berasal dari catatan server." /><ActivityList /></Panel>
-      </aside>
-    </div>
-  </div>
+  const { id } = useParams(), navigate = useNavigate(), { profile } = useAuth()
+  const [task, setTask] = useState(null), [error, setError] = useState(false), [saving, setSaving] = useState(null)
+  const [comments, setComments] = useState(), [updates, setUpdates] = useState(), [comment, setComment] = useState(''), [report, setReport] = useState('')
+  const [commentState, setCommentState] = useState({ loading: false, error: null, success: null })
+  const [reportState, setReportState] = useState({ loading: false, error: null, success: null })
+  useEffect(() => { let active = true; Promise.all([getTask(id), listComments(id).catch(() => undefined), listUpdates(id).catch(() => undefined)]).then(([t, c, u]) => { if (active) { setTask(t); setComments(c ? listValue(c) : undefined); setUpdates(u ? listValue(u) : undefined) } }).catch(() => active && setError(true)); return () => { active = false } }, [id])
+  async function toggle(itemId, completed) { setSaving(itemId); try { const result = await updateChecklistItem(id, itemId, completed); setTask(t => ({ ...t, checklist: (t.checklist || []).map(i => i.id === itemId ? { ...i, ...(result || {}), completed } : i) })) } finally { setSaving(null) } }
+  async function submitComment(e) { e.preventDefault(); if (!comment.trim()) return; setCommentState({ loading: true, error: null, success: null }); try { const result = await addComment(id, comment.trim()); setComments(items => [...(items || []), result]); setComment(''); setCommentState({ loading: false, error: null, success: 'Komentar tersimpan.' }) } catch (e) { setCommentState({ loading: false, error: e.message, success: null }) } }
+  async function submitReport(e) { e.preventDefault(); if (!report.trim()) return; setReportState({ loading: true, error: null, success: null }); try { const result = await addUpdate(id, report.trim()); setUpdates(items => [...(items || []), result]); setReport(''); setReportState({ loading: false, error: null, success: 'Update tersimpan.' }) } catch (e) { setReportState({ loading: false, error: e.message, success: null }) } }
+  const items = task?.checklist, progress = task?.progress
+  return <div className="feature-page task-detail-page"><Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} />Kembali ke Tugas Kami</Link><PageHeader title={task?.title || 'Detail tugas'} description="Satu tugas bersama, progres masing-masing anggota dari checklist tersimpan." actions={<>{(!profile || profile?.capabilities?.editTask || profile?.capabilities?.createTask) && <Button variant="secondary" disabled={!task || !profile} onClick={() => navigate(`/tasks/${id}/edit`)}>Edit tugas</Button>}{profile?.capabilities?.archiveTask && <Button variant="secondary" disabled={!task} onClick={() => archiveTask(id).then(() => navigate('/tasks'))}>Arsipkan tugas</Button>}</>} /><Panel className="feature-panel task-overview"><div className="task-overview__heading"><FileText size={23} /><SectionHeading title="Informasi tugas" description="Metadata tugas." /></div><TaskMetadata projectLabel={task?.project?.name} assignees={task?.assignees} dueLabel={task?.due} priorityLabel={task?.priority} statusLabel={task?.status} weightLabel={task?.weight} /><section className="task-description"><h2>Deskripsi</h2><p>{task?.description || 'Deskripsi tugas belum tersedia.'}</p></section>{error && <UnavailableState title="Detail tugas belum dapat dimuat" description="Layanan tugas gagal diakses." />}</Panel><div className="task-detail-layout"><div className="stack"><TaskChecklistSection items={items} progress={progress} savingItemId={saving} canAdd={false} onItemChange={toggle} /><Panel className="task-report-surface" aria-label="Panel laporan pekerjaan"><SectionHeading title={task ? 'Laporan pekerjaan' : 'Laporan belum dapat dimuat'} description="Komentar dan update tersimpan di server." /><section aria-label="Komentar"><h2>Komentar</h2>{comments?.length ? <ul>{comments.map((item, index) => <li key={item.id || index}><strong>{author(item)}</strong> <small>{time(item)}</small><div>{item.body || item.content}</div></li>)}</ul> : comments ? <p>Belum ada komentar.</p> : null}<form onSubmit={submitComment}><Textarea label="Komentar" value={comment} onChange={e => setComment(e.target.value)} disabled={!task || commentState.loading} /><Button type="submit" disabled={!task || !comment.trim() || commentState.loading}>{commentState.loading ? 'Menyimpan...' : 'Tambah komentar'}</Button>{commentState.error && <p role="alert">Gagal menyimpan komentar.</p>}{commentState.success && <p role="status">{commentState.success}</p>}</form></section><section aria-label="Updates"><h2>Update pekerjaan</h2>{updates?.length ? <ul>{updates.map((item, index) => <li key={item.id || index}><strong>{author(item)}</strong> <small>{time(item)}</small><div>{item.body || item.content || item.workSummary}</div></li>)}</ul> : updates ? <p>Belum ada update.</p> : null}<form onSubmit={submitReport}><Textarea label="Update pekerjaan" value={report} onChange={e => setReport(e.target.value)} disabled={!task || reportState.loading} /><Button type="submit" disabled={!task || !report.trim() || reportState.loading}>{reportState.loading ? 'Menyimpan...' : 'Simpan laporan'}</Button>{reportState.error && <p role="alert">Gagal menyimpan update.</p>}{reportState.success && <p role="status">{reportState.success}</p>}</form></section></Panel></div></div></div>
 }

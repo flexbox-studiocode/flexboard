@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/api/auth/:path*", "destination": "/api/auth?__auth_path=/api/auth/:path*" },
-    { "source": "/((?!api(?:/|$)).*)", "destination": "/index.html" }
+    { "source": "^/((?!api(?:/|$)).*)$", "destination": "/index.html" }
   ]
 }

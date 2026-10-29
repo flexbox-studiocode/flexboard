@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { requestTaskApi } from '../tasks/taskApi.js'
 import { ShieldCheck } from 'lucide-react'
 import { Button, PageHeader, Panel } from '../../components/ui/index.js'
 import { FilterToolbar } from '../common/FeatureUI.jsx'
@@ -10,7 +11,14 @@ import './members.css'
 
 export default function MembersPage({ members } = {}) {
   const [managementPreviewOpen, setManagementPreviewOpen] = useState(false)
-  const state = useScopedCollection(members)
+  const [apiState, setApiState] = useState({ status: 'loading' })
+  useEffect(() => {
+    if (members !== undefined) return
+    let active = true
+    requestTaskApi('/members').then(data => active && setApiState({ status: 'success', items: data?.items || data || [] })).catch(() => active && setApiState({ status: 'error' }))
+    return () => { active = false }
+  }, [members])
+  const state = useScopedCollection(members !== undefined ? members : apiState)
 
   return <div className="feature-page members-page">
     <PageHeader title="Anggota" description="Kenali anggota workspace, tanggung jawab, dan perkembangan pekerjaannya." />

@@ -1,0 +1,109 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import test from 'node:test';
+import pg from 'pg';
+import { closePool, getPool } from '../../server/db/pool.js';
+import { migrate } from '../../server/db/migrations.js';
+import { provisionAuthUser } from '../../server/provisioning.js';
+
+const { Pool } = pg;
+const sourceUrl = process.env.DATABASE_URL;
+const integration = sourceUrl && process.env.NODE_ENV !== 'production' ? test : test.skip;
+
+function response() {
+  return { statusCode: 200, body: null, status(code) { this.statusCode = code; return this; }, json(value) { this.body = value; return this; } };
+}
+
+async function call(handler, method, path, cookie, body) {
+  const res = response();
+  await handler({ method, url: `/api/${path}`, headers: new Headers(cookie ? { cookie } : {}), body }, res);
+  return res;
+}
+
+integration('domain API end-to-end authorization, transactions, persistence, progress, and activity', async () => {
+  const database = `flexboard_domain_test_${randomUUID().replaceAll('-', '')}`;
+  const testUrl = new URL(sourceUrl); testUrl.pathname = `/${database}`;
+  const adminUrl = new URL(sourceUrl); adminUrl.pathname = '/postgres';
+  const admin = new Pool({ connectionString: adminUrl.toString() });
+  let handler;
+  try {
+    await admin.query(`CREATE DATABASE "${database}"`);
+    process.env.DATABASE_URL = testUrl.toString();
+    process.env.NODE_ENV = 'test';
+    await closePool();
+    await migrate();
+    handler = (await import('../../api/domain.js')).default;
+    const pool = getPool();
+
+    async function user(role, label) {
+      const email = `${label.toLowerCase().replaceAll(/\s+/g, '-')}-${Date.now()}-${randomUUID()}@example.test`;
+      const profile = await pool.query('INSERT INTO profiles (display_name, role, is_active) VALUES ($1,$2,true) RETURNING id', [label, role]);
+      const client = await pool.connect();
+      try { await provisionAuthUser({ client, email, name: label, role, profileId: profile.rows[0].id, password: 'correct horse battery staple' }); }
+      finally { client.release(); }
+      const { auth } = await import('../../server/auth.js');
+      const signed = await auth.api.signInEmail({ body: { email, password: 'correct horse battery staple' }, headers: new Headers(), asResponse: true });
+      assert.equal(signed.ok, true);
+      return { id: profile.rows[0].id, cookie: signed.headers.get('set-cookie').split(';', 1)[0] };
+    }
+
+    const leader = await user('leader', 'Domain Leader');
+    const member = await user('member', 'Domain Member');
+    const guest = await call(handler, 'GET', 'tasks', null);
+    assert.equal(guest.statusCode, 401);
+
+    const projectRes = await call(handler, 'POST', 'projects', leader.cookie, { name: 'Domain Project', description: 'API fixture' });
+    assert.equal(projectRes.statusCode, 201);
+    const project = projectRes.body.data.project;
+    await pool.query('INSERT INTO project_members (project_id,user_id,project_role) VALUES ($1,$2,$3)', [project.id, member.id, 'member']);
+
+    const taskRes = await call(handler, 'POST', 'tasks', leader.cookie, {
+      projectId: project.id, title: 'Domain Task', assigneeIds: [member.id], checklist: [{ title: 'First' }, { title: 'Second' }], weight: 2,
+    });
+    assert.equal(taskRes.statusCode, 201);
+    const task = taskRes.body.data.task;
+    const fixture = await pool.query('SELECT (SELECT count(*) FROM project_members WHERE project_id=$1) members, (SELECT count(*) FROM task_assignees WHERE task_id=$2) assignees, (SELECT count(*) FROM checklist_items WHERE task_id=$2) checklist', [project.id, task.id]);
+    assert.deepEqual(fixture.rows[0], { members: '2', assignees: '1', checklist: '2' });
+
+    const invalid = await call(handler, 'POST', 'tasks', leader.cookie, { projectId: project.id, title: '', weight: 0 });
+    assert.equal(invalid.statusCode, 400);
+    const noChecklistTask = await call(handler, 'POST', 'tasks', leader.cookie, { projectId: project.id, title: 'No Checklist' });
+    assert.equal(noChecklistTask.statusCode, 201);
+
+    for (const [method, path, body] of [['POST', 'projects', { name: 'Denied' }], ['POST', 'tasks', { projectId: project.id, title: 'Denied' }], ['PUT', `tasks/${task.id}/assignees`, { userIds: [] }], ['POST', `tasks/${task.id}/archive`, {}]]) {
+      assert.equal((await call(handler, method, path, member.cookie, body)).statusCode, 403);
+    }
+    assert.equal((await call(handler, 'GET', `tasks/${task.id}`, member.cookie)).statusCode, 200);
+
+    const items = (await call(handler, 'GET', `tasks/${task.id}/checklists`, member.cookie)).body.data.items;
+    assert.equal(items.length, 2);
+    assert.equal((await call(handler, 'PATCH', `tasks/${task.id}/checklist/${items[0].id}`, member.cookie, { completed: true })).statusCode, 200);
+    const added = await call(handler, 'POST', `tasks/${task.id}/checklists`, member.cookie, { items: [{ title: 'Third' }] });
+    assert.equal(added.statusCode, 201);
+    assert.equal((await call(handler, 'POST', `tasks/${task.id}/comments`, member.cookie, { body: 'Member comment' })).statusCode, 201);
+    assert.equal((await call(handler, 'POST', `tasks/${task.id}/updates`, member.cookie, { workSummary: 'Member update', blockers: 'None' })).statusCode, 201);
+    assert.equal((await call(handler, 'GET', `tasks/${task.id}/comments`, leader.cookie)).body.data.comments.length, 1);
+    assert.equal((await call(handler, 'GET', `tasks/${task.id}/updates`, leader.cookie)).body.data.updates.length, 1);
+
+    const progress = (await call(handler, 'GET', 'progress/team', member.cookie)).body.data.progress;
+    const calculated = progress.find(row => row.id === task.id);
+    const empty = progress.find(row => row.title === 'No Checklist');
+    assert.equal(calculated.completion_percent, '33.33');
+    assert.equal(empty.completion_percent, null);
+    assert.equal(empty.progress_unavailable_reason, 'NO_ACTIVE_CHECKLIST');
+
+    const archive = await call(handler, 'POST', `tasks/${task.id}/archive`, leader.cookie, {});
+    assert.equal(archive.statusCode, 200);
+    const history = await pool.query("SELECT action FROM activity_logs WHERE task_id=$1 ORDER BY created_at", [task.id]);
+    assert.ok(history.rows.some(row => row.action === 'task.created'));
+    assert.ok(history.rows.some(row => row.action === 'comment.created'));
+    assert.ok(history.rows.some(row => row.action === 'update.created'));
+    assert.ok(history.rows.some(row => row.action === 'task.archived'));
+    assert.equal((await call(handler, 'GET', 'activity', member.cookie)).statusCode, 200);
+  } finally {
+    await closePool();
+    await admin.query(`DROP DATABASE IF EXISTS "${database}" WITH (FORCE)`);
+    await admin.end();
+    process.env.DATABASE_URL = sourceUrl;
+  }
+});

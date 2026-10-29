@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
+import { requestTaskApi } from '../tasks/taskApi.js'
 import { PageHeader, Panel } from '../../components/ui/index.js'
 import { FilterToolbar } from '../common/FeatureUI.jsx'
 import CollectionState from '../common/CollectionState.jsx'
@@ -7,7 +9,14 @@ import ActivityList from './ActivityList.jsx'
 import './activity.css'
 
 export default function ActivityPage({ activity } = {}) {
-  const state = useScopedCollection(activity)
+  const [apiState, setApiState] = useState({ status: 'loading' })
+  useEffect(() => {
+    if (activity !== undefined) return
+    let active = true
+    requestTaskApi('/activity').then(data => active && setApiState({ status: 'success', items: data?.items || data || [] })).catch(() => active && setApiState({ status: 'error' }))
+    return () => { active = false }
+  }, [activity])
+  const state = useScopedCollection(activity !== undefined ? activity : apiState)
 
   return <div className="feature-page activity-page">
     <PageHeader title="Aktivitas" description="Laporan terakhir yang ditulis anggota pada setiap tugas." />
