@@ -20,6 +20,7 @@
   --font-size-page: 4rem;
   --line-height-copy: 1.875;
   --panel-padding: 2.5rem;
+  --panel-padding-block: 3.25rem;
   --icon-size: 1.25rem;
   --icon-stroke: 1.5;
   --radius-sm: 0.35rem;
@@ -40,4 +41,14 @@
   --motion-item: 140ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
   --motion-distance: 8px;
+}
+
+/* Compact workspace density, not page scaling. Keep the root and control sizes intact. */
+@media (min-width: 851px) {
+  :root {
+    --font-size-page: 2.5rem;
+    --font-size-section: 1.75rem;
+    --panel-padding: 1.75rem;
+    --panel-padding-block: 1.75rem;
+  }
 }

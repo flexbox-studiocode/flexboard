@@ -51,6 +51,7 @@
 .checklist-draft > p { font-size: .75rem; line-height: 1.8; }
 .checklist-draft__row { display: flex; gap: .5rem; align-items: flex-end; }
 .checklist-draft__row .field { flex: 1; }
+.task-form-panel .checklist-draft__row > .icon-button { min-height: 65px; }
 .checklist-draft > .button { margin-top: 1rem; }
 .checklist-draft__count { color: var(--color-muted); margin-bottom: 0; }
 @media (max-width: 1000px) { .task-form-layout { grid-template-columns: 1fr; } }
@@ -118,5 +119,16 @@
 .task-report-surface .state { min-height: 5.5rem; padding: .4375rem 1.3125rem; margin-bottom: 1.25rem; background: #fff; color: var(--color-ink); align-items: flex-start; text-align: left; }
 .task-report-surface .state__icon { display: none; }
 .task-report-actions { display: flex; justify-content: flex-end; }
+@media (min-width: 851px) {
+  .task-form-panel > form > .feature-section-heading h2 { font-size: 1.75rem; }
+  .task-form-panel .field > label { font-size: 1rem; }
+  .task-form-panel .field input, .task-form-panel .field textarea, .task-form-panel .field select {
+    min-height: 52px; padding: .75rem 1rem; font-size: var(--font-size-control);
+  }
+  .task-form-panel .field select[multiple] { min-height: 6rem; }
+  .task-form-panel .checklist-draft__row > .icon-button { min-height: 52px; }
+  .task-form-hero-row { gap: 1.5rem; }
+}
 @media (max-width: 800px) { .task-form-hero-row { grid-template-columns: 1fr; gap: 1.25rem; } .task-report-surface { width: 100%; } }
+@media (max-width: 360px) { .task-form-actions { flex-direction: column; align-items: stretch; } }
 @media (max-width: 600px) { .task-card-top, .task-members__heading { align-items: flex-start; flex-direction: column; } .task-report-surface { margin-top: 1.25rem; } .task-members::before { inset-inline: 10%; } .task-form-panel .field input, .task-form-panel .field textarea, .task-form-panel .field select { padding-inline: 1rem; font-size: var(--font-size-control); } }
