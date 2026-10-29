@@ -1,5 +1,5 @@
 @import '../common/features.css';
-.panel.activity-panel { min-width: 0; padding: clamp(1.25rem, 3.75vw, 3.25rem) clamp(1.25rem, 3vw, var(--panel-padding)); border: 1px solid #87a9d2; border-radius: 0; box-shadow: none; }
+.panel.activity-panel { min-width: 0; padding: clamp(1.25rem, 3.75vw, var(--panel-padding-block)) clamp(1.25rem, 3vw, var(--panel-padding)); border: 1px solid #87a9d2; border-radius: 0; box-shadow: none; }
 .activity-panel > h2 { margin: 0 0 1.5rem; font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; }
 .activity-page .feature-filters { gap: .75rem; margin-bottom: 1.5rem; }
 .activity-page .feature-filter-search { max-width: 22rem; }
@@ -24,4 +24,5 @@
 .activity-list__project { color: var(--color-primary-dark); }
 .activity-list time, .activity-list__time { color: var(--color-muted); font-size: inherit; }
 .activity-list__description { margin: 0; color: var(--color-muted); font-family: var(--font-display); font-size: var(--font-size-control); line-height: var(--line-height-copy); overflow-wrap: anywhere; }
+@media (min-width: 851px) { .activity-list > li { min-height: 112px; padding-block: 1.25rem; } }
 @media (max-width: 600px) { .activity-panel > h2 { font-size: 1.25rem; } .activity-list > li { min-height: 0; padding-block: 1.75rem; } .activity-list__title { font-size: 1rem; } .activity-list__description { font-size: .8rem; } .activity-list__avatar { flex-basis: 42px; width: 42px; height: 42px; } }

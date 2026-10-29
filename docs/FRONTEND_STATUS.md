@@ -1,6 +1,6 @@
 # Status frontend FlexBoard
 
-Tanggal pembaruan: 29 Oktober 2026. Status: **fondasi UI dengan integrasi sesi pada baseline terbaru; bukan MVP domain end-to-end**. Catatan paket 27 Oktober di bawah bersifat historis; perubahan autentikasi baseline dan paket motion dijelaskan pada bagian terbaru.
+Tanggal pembaruan: 29 Oktober 2026. Status: **UI dengan integrasi sesi serta tugas/form/checklist pada baseline `68d75bf`; belum merupakan verifikasi seluruh MVP end-to-end**. Bagian paket terdahulu di bawah bersifat historis, termasuk pernyataan kontrol disabled dan domain belum terintegrasi. Lihat bagian kepadatan frontend untuk kondisi baseline dan batas validasi terbaru.
 
 ## Yang tersedia
 
@@ -155,6 +155,17 @@ Branch `feat/frontend-motion` dibuat dari `origin/main` pada `7ced0be`, bukan ba
 - Validasi akhir: 178 tes unit dalam 21 file lulus (`npm test -- --maxWorkers=1`, 101,15 detik); 67 tes Chromium lulus (3,7 menit) pada server terisolasi port 5186; production build dan empat tes konfigurasi deployment lulus. Lint tanpa error dengan satu warning baseline `react-refresh/only-export-components` di `src/features/auth/AuthContext.jsx:31:17`.
 - Screenshot login desktop 1440 px dan form tugas mobile 390 px diperiksa tanpa klaim pixel-perfect. Dependency backend lokal `better-auth`, `better-auth/node`, dan `pg` belum teresolusi; auth/database nyata, lintas browser, dan audit performa terukur belum diverifikasi. Backend, dependency, konfigurasi deployment, `.env`, dan repository bersarang tidak diubah.
 - Spesifikasi, kondisi pembatalan, fallback, dan batas pengujian: [FRONTEND_MOTION.md](FRONTEND_MOTION.md).
+
+## Kepadatan frontend dan konsistensi tombol — 29 Oktober 2026
+
+Branch `fix/frontend-desktop-density` dibuat dari `origin/main` pada `68d75bf`, setelah paket motion digabung dan integrasi domain tugas/form/checklist masuk. Paket ini tidak mengembalikan runtime ke pratinjau lama: GET domain, default/enum form, submit tugas dan capability dari sesi tetap dipertahankan.
+
+- Komponen desktop mulai 851 CSS px dipadatkan, bukan seluruh halaman diskalakan: header min 80 px, banner min 164 px, jarak bawah 32 px, heading banner 32–44 px, heading halaman maksimum 40 px dan section dashboard maksimum 28 px.
+- Panel dan baris aktivitas/progres terisi, pencarian, form tugas dan login lebih ringkas. Root font, lebar maksimum workspace, native select, serta filter 48/16/24 px dengan chevron inset 16 px dan ruang teks 48 px tetap dipertahankan.
+- Review screenshot menemukan tombol proyek sejajar dengan teks bantuan field, bukan kontrolnya. Bantuan dipindahkan ke luar baris dengan hubungan aksesibel `aria-describedby`; select dan tombol sama-sama 48 px. Koreksi lain mencakup tombol hapus checklist, baris reset filter mobile, aksi form sempit dan konfirmasi dialog sempit.
+- Aturan mobile kepadatan utama dipertahankan. Koreksi tombol mobile disengaja untuk wrapping/alignment, bukan perubahan domain atau penguncian zoom pengguna.
+- Tes lama diselaraskan hanya untuk perubahan integrasi yang benar-benar usang. Assertion regresi nyata tetap dipertahankan: nama region form hilang, benturan key create/edit ID `new`, serta `TasksPage` yang tidak mengikuti pembaruan resource props. Ini temuan baseline, bukan ditutup dengan penghapusan tes atau perubahan domain dalam paket CSS.
+- Tidak mengubah backend, database/migration/seed, dependency/lockfile, `.env`, konfigurasi deployment, atau repository bersarang `flexboard/`. Detail ukuran, koreksi dan hasil validasi: [FRONTEND_DENSITY.md](FRONTEND_DENSITY.md).
 
 ## Git
 

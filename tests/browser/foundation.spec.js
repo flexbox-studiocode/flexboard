@@ -1,6 +1,21 @@
 import { expect, test } from '@playwright/test'
 
+const writes = new WeakMap()
+test.beforeEach(async ({ page }) => {
+  const requests = []
+  writes.set(page, requests)
+  page.on('request', request => {
+    if (new URL(request.url()).pathname.startsWith('/api/') && request.method() !== 'GET') requests.push(`${request.method()} ${request.url()}`)
+  })
+  await page.route('**/api/auth/me', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.fallback())
+  await page.route('**/api/tasks', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.fallback())
+})
+test.afterEach(async ({ page }) => {
+  expect(writes.get(page), 'pratinjau tidak mengirim mutasi API').toEqual([])
+})
+
 const routes = ['/', '/tasks', '/tasks/new', '/tasks/unavailable', '/tasks/unavailable/edit', '/team-progress', '/members', '/activity', '/login']
+const allowedReads = ['/api/auth/me', '/api/tasks', '/api/projects', '/api/members', '/api/progress/team', '/api/activity', '/api/tasks/unavailable', '/api/tasks/unavailable/comments', '/api/tasks/unavailable/updates']
 for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
   test(`seluruh halaman tanpa overflow pada ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
@@ -14,8 +29,7 @@ for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
     for (const route of routes) {
       await page.goto(route)
       await expect(page.locator('h1')).toBeVisible()
-      // Plain Vite has no auth endpoint. Its 404/HTML fallback is unavailable,
-      // not an anonymous or fabricated session; exercise the real client path.
+      // A deterministic unavailable session must never become a fabricated profile.
       if (route !== '/login') await expect(page.getByRole('complementary', { name: 'Status sesi' })).toContainText('Layanan autentikasi tidak tersedia.')
       await expect(page.locator('.brand img')).toBeVisible()
       expect(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true)
@@ -32,8 +46,8 @@ for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
       }
     }
     expect(errors).toEqual([])
-    expect(apiRequests.length).toBeGreaterThanOrEqual(routes.length - 1)
-    expect(apiRequests.filter(request => request.method !== 'GET' || request.path !== '/api/auth/me')).toEqual([])
+    expect(apiRequests.filter(request => request.method === 'GET' && request.path === '/api/auth/me').length).toBeGreaterThanOrEqual(routes.length - 1)
+    expect(apiRequests.filter(request => request.method !== 'GET' || !allowedReads.includes(request.path))).toEqual([])
   })
 }
 test('menu mobile menahan fokus, mendukung Escape, dan mengembalikan fokus', async ({ page }) => {
@@ -169,11 +183,14 @@ test('referensi detail panjang tidak mengarang data atau meluapkan layar', async
   await page.setViewportSize({ width: 360, height: 844 })
   const reference = 'referensi-lokal-'.repeat(30)
   await page.goto(`/tasks/${reference}`)
-  await expect(page.locator('.task-reference code')).toHaveText(reference)
+  await expect(page).toHaveURL(url => url.pathname === `/tasks/${reference}`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Detail tugas', exact: true })).toBeVisible()
+  await expect(page.getByText('Detail tugas belum dapat dimuat', { exact: true })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
-  for (const name of ['Edit tugas', 'Arsipkan tugas', 'Tambah checklist']) {
+  for (const name of ['Edit tugas', 'Tambah checklist']) {
     await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
   }
+  await expect(page.getByRole('button', { name: 'Arsipkan tugas', exact: true })).toHaveCount(0)
   await expect(page.getByRole('progressbar')).toHaveCount(0)
   await expect(page.getByRole('checkbox')).toHaveCount(0)
 })
@@ -223,7 +240,7 @@ test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
   await page.getByRole('button', { name: 'Cari tugas', exact: true }).click()
   await expect(page).toHaveURL(/\/tasks\?q=kata%20pencarian$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Tugas Kami' })).toBeVisible()
-  await expect(page.getByText('Daftar tugas belum dapat dimuat')).toBeVisible()
+  await expect(page.getByText('Daftar tugas belum dapat dimuat', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Reset filter' }).click()
   await expect(page).toHaveURL(/\/tasks$/)
 })

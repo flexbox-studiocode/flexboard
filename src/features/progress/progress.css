@@ -1,5 +1,5 @@
 @import '../common/features.css';
-.panel.progress-panel { min-width: 0; padding: clamp(1.25rem, 3.75vw, 3.25rem) clamp(1.25rem, 3vw, var(--panel-padding)); border: 1px solid #87a9d2; border-radius: 0; box-shadow: none; }
+.panel.progress-panel { min-width: 0; padding: clamp(1.25rem, 3.75vw, var(--panel-padding-block)) clamp(1.25rem, 3vw, var(--panel-padding)); border: 1px solid #87a9d2; border-radius: 0; box-shadow: none; }
 .progress-panel__heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: 1.5rem; }
 .progress-panel__heading h2 { margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; }
 .progress-panel__heading > span { color: var(--color-muted); font-size: .75rem; }
@@ -32,4 +32,5 @@
 .member-progress-list__average strong { font-family: var(--font-display); color: var(--color-primary-dark); font-size: 2rem; font-weight: 500; }
 .member-progress-list__average span { font-family: var(--font-display); color: var(--color-muted); font-size: 1.25rem; font-weight: 700; line-height: 1.875rem; }
 @media (max-width: 1000px) { .member-progress-list > li { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; padding-block: 2rem; } .member-progress-list__average { text-align: right; } }
+@media (min-width: 851px) { .member-progress-list > li { min-height: 112px; padding-block: 1.25rem; } }
 @media (max-width: 600px) { .progress-panel__heading h2 { font-size: 1.25rem; } .member-progress-list > li { gap: 1rem; } .member-progress-list__project { min-width: 0; } .member-progress-list h4 { font-size: .95rem; } .member-progress-list__average strong { font-size: 1.6rem; } .member-progress-list__average span { font-size: .8rem; } }
