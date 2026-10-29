@@ -23,13 +23,13 @@ export default function MembersPage({ members } = {}) {
       if (active) setApiState({ status: 'success', items: data.members, scope })
     }).catch(() => active && setApiState({ status: 'error', scope }))
     return () => { active = false }
-  }, [members])
+  }, [members, scope])
   const state = useScopedCollection(members !== undefined ? members : apiState)
 
   return <div className="feature-page members-page">
     <PageHeader title="Anggota" description="Kenali anggota workspace, tanggung jawab, dan perkembangan pekerjaannya." />
     <Panel className="members-panel" aria-labelledby="members-list-title">
-      <div className="members-panel__heading"><h2 id="members-list-title">Daftar anggota</h2><Button variant="secondary" onClick={() => setManagementPreviewOpen(true)}>Pratinjau pengelolaan akun</Button></div>
+      <div className="members-panel__heading"><h2 id="members-list-title">Daftar anggota</h2><Button variant="secondary" onClick={() => setApiState({ status: 'loading', scope })}>Muat ulang</Button></div>
       <FilterToolbar placeholder="Cari nama anggota…" />
       <CollectionState state={state}
         unavailable={{ title: 'Daftar anggota belum dapat dimuat', description: 'Layanan anggota belum terhubung. Ini bukan konfirmasi bahwa workspace tidak memiliki anggota. Akun, peran, dan ringkasan tugas tidak ditampilkan tanpa data server.' }}
