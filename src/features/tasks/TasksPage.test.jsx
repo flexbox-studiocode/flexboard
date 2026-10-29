@@ -1,9 +1,20 @@
-import { expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import TasksPage from './TasksPage.jsx'
 import TaskCard from './TaskCard.jsx'
+import { listTasks } from './taskApi.js'
+import { useAuth } from '../auth/AuthContext.jsx'
+
+vi.mock('./taskApi.js', () => ({ listTasks: vi.fn() }))
+vi.mock('../auth/AuthContext.jsx', () => ({ useAuth: vi.fn() }))
+beforeEach(() => {
+  vi.resetAllMocks()
+  useAuth.mockReturnValue({ profile: { id: 'manager', role: 'manager', capabilities: { createTask: true } } })
+  listTasks.mockResolvedValue({ items: [] })
+})
+afterEach(cleanup)
 
 const scope = '/tasks'
 const task = { id: 'test-task', title: 'Judul uji '.repeat(30), description: 'Deskripsi uji '.repeat(60), progress: 0 }
@@ -26,6 +37,13 @@ it('mempertahankan hierarki panel dan tautan pratinjau tanpa kartu contoh', () =
   expect(addTask.querySelector('svg')).toHaveAttribute('width', '20')
   expect(addTask.querySelector('svg')).toHaveAttribute('stroke-width', '1.5')
   expect(screen.queryByRole('article')).not.toBeInTheDocument()
+})
+
+it('menyembunyikan pembuatan tugas bagi anggota tanpa kapabilitas', () => {
+  useAuth.mockReturnValue({ profile: { id: 'member', role: 'member', capabilities: {} } })
+  render(view({ tasks: resource('success', { items: [] }) }))
+  expect(screen.queryByRole('link', { name: /Tambah tugas/ })).not.toBeInTheDocument()
+  expect(listTasks).not.toHaveBeenCalled()
 })
 
 it('kartu tugas tetap tidak memilih progres atau anggota bawaan', () => {
