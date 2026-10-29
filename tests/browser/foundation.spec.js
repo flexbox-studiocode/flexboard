@@ -7,10 +7,16 @@ for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
     const errors = []
     const apiRequests = []
     page.on('pageerror', error => errors.push(error.message))
-    page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/')) apiRequests.push(request.url()) })
+    page.on('request', request => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/api/')) apiRequests.push({ method: request.method(), path: `${url.pathname}${url.search}` })
+    })
     for (const route of routes) {
       await page.goto(route)
       await expect(page.locator('h1')).toBeVisible()
+      // Plain Vite has no auth endpoint. Its 404/HTML fallback is unavailable,
+      // not an anonymous or fabricated session; exercise the real client path.
+      if (route !== '/login') await expect(page.getByRole('complementary', { name: 'Status sesi' })).toContainText('Layanan autentikasi tidak tersedia.')
       await expect(page.locator('.brand img')).toBeVisible()
       expect(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true)
@@ -26,7 +32,8 @@ for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
       }
     }
     expect(errors).toEqual([])
-    expect(apiRequests).toEqual([])
+    expect(apiRequests.length).toBeGreaterThanOrEqual(routes.length - 1)
+    expect(apiRequests.filter(request => request.method !== 'GET' || request.path !== '/api/auth/me')).toEqual([])
   })
 }
 test('menu mobile menahan fokus, mendukung Escape, dan mengembalikan fokus', async ({ page }) => {
@@ -61,14 +68,17 @@ test('dialog tidak ditutup oleh klik padding dan backdrop tetap menutup', async 
   await expect(dialog).not.toBeVisible()
 })
 
-test('profil pratinjau tidak mengarang sesi dan dapat dibuka pada mobile', async ({ page }) => {
+test('profil saat layanan autentikasi tidak tersedia tidak mengarang sesi pada mobile', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 844 })
   await page.goto('/')
   const trigger = page.getByRole('button', { name: 'Buka profil akun' })
   await trigger.click()
   const dialog = page.getByRole('dialog', { name: 'Profil akun' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByRole('heading', { name: 'Profil belum dapat dimuat' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Sesi tidak tersedia' })).toBeVisible()
+  await expect(dialog.getByText('Layanan autentikasi tidak tersedia. Coba lagi nanti.')).toBeVisible()
+  await expect(dialog.locator('.profile-details dd')).toHaveText(['—', '—', '—', '—', '—'])
+  await expect(dialog.getByRole('link', { name: 'Halaman masuk', exact: true })).toHaveAttribute('href', '/login')
   await expect(dialog.getByRole('button', { name: 'Keluar', exact: true })).toBeDisabled()
   await expect(dialog.getByRole('button', { name: 'Kelola role/status' })).toBeDisabled()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
@@ -227,10 +237,12 @@ test('fokus route tidak menggulir header keluar layar dan skip link muncul saat 
   await skip.focus()
   expect(await skip.evaluate(element => element.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0)
 })
-test('login dan penyimpanan belum aktif tanpa kontrak backend', async ({ page }) => {
+test('form login aktif tetapi penyimpanan tugas tetap memerlukan sesi dan izin server', async ({ page }) => {
   await page.goto('/login')
-  await expect(page.getByRole('button', { name: 'Masuk belum tersedia' })).toBeDisabled()
-  await expect(page.getByLabel('Password')).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Masuk', exact: true })).toBeEnabled()
+  await expect(page.getByLabel('Email', { exact: true })).toBeEnabled()
+  await expect(page.getByLabel('Password', { exact: true })).toBeEnabled()
+  await expect(page.getByRole('status')).toContainText('Autentikasi tersedia')
   await page.goto('/tasks/new')
   await expect(page.getByRole('button', { name: /Simpan/ })).toBeDisabled()
 })
