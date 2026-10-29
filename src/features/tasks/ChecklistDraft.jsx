@@ -1,6 +1,7 @@
 import { useId, useLayoutEffect, useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button, IconButton, Input } from '../../components/ui/index.js'
+import settleMotion from '../../components/ui/settleMotion.js'
 
 // Only user-entered form state. No task, progress, or completion is simulated.
 export default function ChecklistDraft({ items = [], onChange, disabled = false }) {
@@ -57,7 +58,7 @@ export default function ChecklistDraft({ items = [], onChange, disabled = false 
     <legend>Rancangan checklist</legend>
     <p id={descriptionId} className="muted">Susun item pekerjaan secara lokal. Item belum dibuat di server, tidak dapat ditandai selesai, dan tidak menghasilkan progres.</p>
     <div className="stack">
-      {items.map((item, index) => <div key={item.id} data-checklist-id={item.id} className="checklist-draft__row">
+      {items.map((item, index) => <div key={item.id} data-checklist-id={item.id} className="checklist-draft__row" onFocusCapture={settleMotion} onAnimationEnd={settleMotion}>
         <Input label={`Item checklist ${index + 1}`} value={item.title} onChange={event => updateItem(item.id, event.target.value)} autoComplete="off" />
         <IconButton label={`Hapus item checklist ${index + 1}`} onClick={() => removeItem(item.id)}><Trash2 size={18} aria-hidden="true" /></IconButton>
       </div>)}
