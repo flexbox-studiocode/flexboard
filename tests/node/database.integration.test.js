@@ -38,8 +38,8 @@ integration('PostgreSQL migration, constraints, rollback, and seed isolation', a
     await closePool();
     await migrate();
     const first = await migrationStatus();
-    assert.equal(first.applied.length, 3);
-    assert.equal(first.files.length, 3);
+    assert.equal(first.applied.length, 4);
+    assert.equal(first.files.length, 4);
     await migrate();
     const second = await migrationStatus();
     assert.equal(second.applied.length, first.applied.length);
@@ -47,6 +47,10 @@ integration('PostgreSQL migration, constraints, rollback, and seed isolation', a
     db = new Pool({ connectionString: testUrl.toString() });
     const tables = await db.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name = ANY($1)", [['profiles','projects','project_members','tasks','task_assignees','checklist_items','task_updates','activity_logs','task_comments']]);
     assert.equal(tables.rowCount, 9);
+    const columns = await db.query("SELECT column_name FROM information_schema.columns WHERE table_name='checklist_items' AND column_name = ANY($1)", [['description','assignee_id']]);
+    assert.equal(columns.rowCount, 2);
+    const indexes = await db.query("SELECT indexname FROM pg_indexes WHERE tablename='checklist_items' AND indexname='checklist_assignee_idx'");
+    assert.equal(indexes.rowCount, 1);
     const profile = await db.query("INSERT INTO profiles (display_name) VALUES ('Integration Fixture') RETURNING id");
     const project = await db.query("INSERT INTO projects (name, created_by) VALUES ('Integration Project', $1) RETURNING id", [profile.rows[0].id]);
     const task = await db.query("INSERT INTO tasks (project_id, title, created_by) VALUES ($1, 'Integration Task', $2) RETURNING id", [project.rows[0].id, profile.rows[0].id]);
