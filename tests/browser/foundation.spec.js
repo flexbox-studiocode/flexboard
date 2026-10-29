@@ -240,7 +240,7 @@ test('pencarian URL dan reset tidak membuat hasil palsu', async ({ page }) => {
   await page.getByRole('button', { name: 'Cari tugas', exact: true }).click()
   await expect(page).toHaveURL(/\/tasks\?q=kata%20pencarian$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Tugas Kami' })).toBeVisible()
-  await expect(page.getByText('Daftar tugas gagal dimuat', { exact: true })).toBeVisible()
+  await expect(page.getByText('Daftar tugas belum dapat dimuat', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Reset filter' }).click()
   await expect(page).toHaveURL(/\/tasks$/)
 })
