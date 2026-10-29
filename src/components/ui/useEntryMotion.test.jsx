@@ -18,9 +18,15 @@ it('settles reduced entries and newly mounted children before motion is enabled'
   expect(container.querySelector('span')).toHaveAttribute('data-motion-settled', 'true')
 })
 
-it('remembers preference cancellation and cleans up listeners', () => {
+it.each([false, true])('remembers preference cancellation and cleans up listeners (legacy: %s)', legacy => {
   let listener
   const media = { matches: false, addEventListener: vi.fn((_, fn) => { listener = fn }), removeEventListener: vi.fn() }
+  if (legacy) {
+    media.addListener = vi.fn(fn => { listener = fn })
+    media.removeListener = vi.fn()
+    delete media.addEventListener
+    delete media.removeEventListener
+  }
   vi.stubGlobal('matchMedia', () => media)
   const { container, unmount } = render(<Entry child />)
   expect(container.firstChild).not.toHaveAttribute('data-motion-settled')
@@ -32,5 +38,6 @@ it('remembers preference cancellation and cleans up listeners', () => {
   listener()
   expect(root).toHaveAttribute('data-motion-settled', 'true')
   unmount()
-  expect(media.removeEventListener).toHaveBeenCalledWith('change', listener)
+  if (legacy) expect(media.removeListener).toHaveBeenCalledWith(listener)
+  else expect(media.removeEventListener).toHaveBeenCalledWith('change', listener)
 })

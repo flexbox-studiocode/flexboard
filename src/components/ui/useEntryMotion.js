@@ -11,7 +11,11 @@ export default function useEntryMotion(ref) {
       ref.current.querySelectorAll('[data-motion-entry]').forEach(node => { node.dataset.motionSettled = 'true' })
     }
     settle()
-    media.addEventListener?.('change', settle)
-    return () => media.removeEventListener?.('change', settle)
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', settle)
+      return () => media.removeEventListener('change', settle)
+    }
+    media.addListener?.(settle)
+    return () => media.removeListener?.(settle)
   })
 }
