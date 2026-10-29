@@ -15,7 +15,7 @@ export default function MembersPage({ members } = {}) {
   useEffect(() => {
     if (members !== undefined) return
     let active = true
-    requestTaskApi('/members').then(data => active && setApiState({ status: 'success', items: data?.items || data || [] })).catch(() => active && setApiState({ status: 'error' }))
+    requestTaskApi('/members').then(data => active && setApiState({ status: 'success', items: data?.members || data?.items || (Array.isArray(data) ? data : []) })).catch(() => active && setApiState({ status: 'error' }))
     return () => { active = false }
   }, [members])
   const state = useScopedCollection(members !== undefined ? members : apiState)
