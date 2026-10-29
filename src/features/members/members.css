@@ -1,5 +1,5 @@
 @import '../common/features.css';
-.panel.members-panel { min-width: 0; padding: clamp(1.25rem, 3.75vw, 3.25rem) clamp(1.25rem, 3vw, var(--panel-padding)); border: 1px solid #87a9d2; border-radius: 0; box-shadow: none; }
+.panel.members-panel { min-width: 0; padding: clamp(1.25rem, 3.75vw, var(--panel-padding-block)) clamp(1.25rem, 3vw, var(--panel-padding)); border: 1px solid #87a9d2; border-radius: 0; box-shadow: none; }
 .members-panel__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
 .members-panel__heading h2 { margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; }
 .members-page .feature-filters { gap: .75rem; margin-bottom: 1.5rem; }

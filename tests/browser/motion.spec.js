@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 if (process.env.MOTION_TEST_BASE_URL) test.use({ baseURL: process.env.MOTION_TEST_BASE_URL })
 
 async function unavailableSession(page) {
-  await page.route('**/api/auth/me', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }))
+  await page.route('**/api/auth/me', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.fallback())
 }
 
 async function finishAnimations(locator) {
@@ -53,8 +53,18 @@ async function revealCount(page) {
   return page.evaluate(() => window.__motionReveals.length)
 }
 
+const writes = new WeakMap()
+test.afterEach(async ({ page }) => {
+  expect(writes.get(page), 'motion interactions do not send API mutations').toEqual([])
+})
 test.beforeEach(async ({ page }) => {
+  const requests = []
+  writes.set(page, requests)
+  page.on('request', request => {
+    if (new URL(request.url()).pathname.startsWith('/api/') && request.method() !== 'GET') requests.push(`${request.method()} ${request.url()}`)
+  })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.route('**/api/tasks', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.fallback())
   // Hold entry effects at a visible frame so assertions never race a 220ms effect.
   await page.addInitScript(() => {
     document.addEventListener('animationstart', event => {

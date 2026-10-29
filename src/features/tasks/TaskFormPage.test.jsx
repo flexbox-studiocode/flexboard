@@ -1,8 +1,25 @@
-import { expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import TaskFormPage from './TaskFormPage.jsx'
+import { createTask, getTask, listMembers, listProjects, updateTask } from './taskApi.js'
+import { useAuth } from '../auth/AuthContext.jsx'
+
+vi.mock('./taskApi.js', () => ({ createTask: vi.fn(), getTask: vi.fn(), listMembers: vi.fn(), listProjects: vi.fn(), updateTask: vi.fn() }))
+vi.mock('../auth/AuthContext.jsx', () => ({ useAuth: vi.fn() }))
+const manager = { id: 'manager', role: 'manager', capabilities: { createTask: true, editTask: true } }
+const savedTask = id => ({ id, title: `Tugas ${id}`, description: 'Arahan tersimpan', weight: 2, project_id: 'project-1', priority: 'high', status: 'in_progress', checklist: [], assignees: [{ id: 'member-1' }] })
+beforeEach(() => {
+  vi.resetAllMocks()
+  useAuth.mockReturnValue({ profile: manager })
+  listProjects.mockResolvedValue({ projects: [{ id: 'project-1', name: 'Proyek tim' }] })
+  listMembers.mockResolvedValue({ members: [{ id: 'member-1', display_name: 'Anggota tim' }] })
+  getTask.mockImplementation(async id => savedTask(id))
+  createTask.mockResolvedValue({ id: 'created-task' })
+  updateTask.mockResolvedValue({ id: 'unavailable' })
+})
+afterEach(cleanup)
 
 function renderForm() {
   render(<MemoryRouter initialEntries={['/tasks/new']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -10,11 +27,11 @@ function renderForm() {
     <Link to="/tasks/another/edit">Buka edit lain</Link>
     <Link to="/tasks/new/edit">Buka edit ID new</Link>
     <Link to="/tasks/new">Buka baru</Link>
-    <Routes><Route path="/tasks/new" element={<TaskFormPage />} /><Route path="/tasks/:id/edit" element={<TaskFormPage />} /></Routes>
+    <Routes><Route path="/tasks/new" element={<TaskFormPage />} /><Route path="/tasks/:id/edit" element={<TaskFormPage />} /><Route path="/tasks/:id" element={<h1>Detail tersimpan</h1>} /></Routes>
   </MemoryRouter>)
 }
 
-it('menyusun checklist lokal tanpa status selesai, progres, atau penyimpanan', async () => {
+it('menyusun checklist draft tanpa status selesai atau progres sebelum disimpan', async () => {
   renderForm()
   await userEvent.click(screen.getByRole('button', { name: 'Tambah item checklist' }))
   const input = screen.getByLabelText('Item checklist 1')
@@ -26,7 +43,48 @@ it('menyusun checklist lokal tanpa status selesai, progres, atau penyimpanan', a
   expect(screen.getByRole('status')).toHaveTextContent('1 item dalam rancangan lokal.')
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeEnabled()
+  expect(createTask).not.toHaveBeenCalled()
+})
+
+it('mengirim payload tugas dan checklist lalu membuka detail setelah server berhasil', async () => {
+  let resolveSave
+  createTask.mockReturnValue(new Promise(resolve => { resolveSave = resolve }))
+  renderForm()
+  await screen.findByRole('option', { name: 'Proyek tim' })
+  fireEvent.change(screen.getByLabelText('Judul tugas'), { target: { value: 'Tugas baru' } })
+  await userEvent.selectOptions(screen.getByLabelText('Proyek'), 'project-1')
+  await userEvent.selectOptions(screen.getByLabelText('Penanggung jawab'), 'member-1')
+  await userEvent.click(screen.getByRole('button', { name: 'Tambah item checklist' }))
+  fireEvent.change(screen.getByLabelText('Item checklist 1'), { target: { value: 'Pekerjaan pertama' } })
+  await userEvent.click(screen.getByRole('button', { name: 'Simpan tugas' }))
+  expect(createTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Tugas baru', projectId: 'project-1', assigneeIds: ['member-1'], weight: 1, dueAt: null, priority: 'medium', status: 'todo', checklist: [{ id: expect.any(String), title: 'Pekerjaan pertama' }] }))
+  expect(updateTask).not.toHaveBeenCalled()
+  expect(screen.getByRole('button', { name: /Menyimpan/ })).toBeDisabled()
+  expect(screen.queryByRole('heading', { name: 'Detail tersimpan' })).not.toBeInTheDocument()
+  resolveSave({ task: { id: 'created-task' } })
+  expect(await screen.findByRole('heading', { name: 'Detail tersimpan' })).toBeInTheDocument()
+})
+
+it('menyimpan edit dengan ID route dan menampilkan penolakan izin server', async () => {
+  updateTask.mockRejectedValue(new Error('HTTP_403'))
+  renderForm()
+  await userEvent.click(screen.getByRole('link', { name: 'Buka edit' }))
+  await waitFor(() => expect(screen.getByLabelText('Judul tugas')).toHaveValue('Tugas unavailable'))
+  fireEvent.change(screen.getByLabelText('Judul tugas'), { target: { value: 'Judul diubah' } })
+  await userEvent.click(screen.getByRole('button', { name: 'Simpan tugas' }))
+  expect(updateTask).toHaveBeenCalledWith('unavailable', expect.objectContaining({ title: 'Judul diubah', weight: 2, projectId: 'project-1' }))
+  expect(createTask).not.toHaveBeenCalled()
+  expect(await screen.findByRole('heading', { name: 'Anda tidak memiliki izin.' })).toBeInTheDocument()
+  expect(screen.getByLabelText('Judul tugas')).toHaveValue('Judul diubah')
+  expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeEnabled()
+})
+
+it('menonaktifkan pembuatan untuk anggota tanpa kapabilitas createTask', () => {
+  useAuth.mockReturnValue({ profile: { id: 'member', role: 'member', capabilities: {} } })
+  renderForm()
   expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeDisabled()
+  expect(createTask).not.toHaveBeenCalled()
 })
 
 it('mengembalikan fokus keyboard ke item berikutnya, sebelumnya, lalu tombol tambah setelah hapus', async () => {
@@ -68,20 +126,23 @@ it('menempatkan judul, tenggat, arahan, dan field PRD dalam satu panel form', ()
   expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
 })
 
-it('menolak bobot nol tanpa memilih default atau enum yang belum disepakati', async () => {
+it('menggunakan default domain dan validasi native untuk bobot positif', async () => {
   renderForm()
   const weight = screen.getByLabelText('Bobot')
-  expect(weight).toHaveDisplayValue('')
-  await userEvent.type(weight, '0')
-  expect(weight).toHaveAttribute('aria-invalid', 'true')
-  await userEvent.clear(weight)
-  await userEvent.type(weight, '0.5')
-  expect(weight).not.toHaveAttribute('aria-invalid')
-  expect(screen.getByLabelText('Prioritas')).toBeDisabled()
-  expect(screen.getByLabelText('Status')).toBeDisabled()
+  expect(weight).toHaveValue(1)
+  expect(weight).toHaveAttribute('min', '0.01')
+  fireEvent.change(weight, { target: { value: '0' } })
+  expect(weight).toBeInvalid()
+  expect(weight.validity.rangeUnderflow).toBe(true)
+  fireEvent.change(weight, { target: { value: '0.5' } })
+  expect(weight).toBeValid()
+  expect(screen.getByLabelText('Prioritas')).toBeEnabled()
+  expect(screen.getByLabelText('Prioritas')).toHaveValue('medium')
+  expect(screen.getByLabelText('Status')).toBeEnabled()
+  expect(screen.getByLabelText('Status')).toHaveValue('todo')
 })
 
-it('menghapus rancangan lokal ketika berpindah referensi route tanpa mengaku memuat data', async () => {
+it('memuat tugas tersimpan saat route edit berubah dan mereset form baru', async () => {
   renderForm()
   await userEvent.type(screen.getByLabelText('Judul tugas'), 'Input lokal')
   await userEvent.type(screen.getByLabelText('Deskripsi'), 'Arahan lokal')
@@ -90,26 +151,30 @@ it('menghapus rancangan lokal ketika berpindah referensi route tanpa mengaku mem
   await userEvent.type(screen.getByLabelText('Item checklist 1'), 'Item lokal')
   await userEvent.click(screen.getByRole('link', { name: 'Buka edit' }))
   const editTitle = screen.getByLabelText('Judul tugas')
-  expect(editTitle).toHaveValue('')
-  expect(editTitle).toBeDisabled()
-  expect(screen.getByLabelText('Deskripsi')).toHaveValue('')
-  expect(screen.getByLabelText('Bobot')).toHaveDisplayValue('')
+  await waitFor(() => expect(editTitle).toHaveValue('Tugas unavailable'))
+  expect(getTask).toHaveBeenCalledWith('unavailable')
+  expect(editTitle).toBeEnabled()
+  expect(screen.getByLabelText('Deskripsi')).toHaveValue('Arahan tersimpan')
+  expect(screen.getByLabelText('Bobot')).toHaveValue(2)
+  expect(screen.getByLabelText('Proyek')).toHaveValue('project-1')
+  expect(screen.getByLabelText('Penanggung jawab')).toHaveValue(['member-1'])
   expect(screen.queryByLabelText('Item checklist 1')).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Tambah item checklist' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Tambah item checklist' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeEnabled()
 
   await userEvent.click(screen.getByRole('link', { name: 'Buka edit lain' }))
   expect(editTitle).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Judul tugas')).toHaveValue('')
-  expect(screen.getByLabelText('Judul tugas')).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Tambah item checklist' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeDisabled()
+  await waitFor(() => expect(screen.getByLabelText('Judul tugas')).toHaveValue('Tugas another'))
+  expect(getTask).toHaveBeenCalledWith('another')
+  expect(screen.getByLabelText('Judul tugas')).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Tambah item checklist' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeEnabled()
 
   await userEvent.click(screen.getByRole('link', { name: 'Buka baru' }))
   expect(screen.getByLabelText('Judul tugas')).toHaveValue('')
   expect(screen.getByLabelText('Judul tugas')).toBeEnabled()
   expect(screen.getByLabelText('Deskripsi')).toHaveValue('')
-  expect(screen.getByLabelText('Bobot')).toHaveDisplayValue('')
+  expect(screen.getByLabelText('Bobot')).toHaveValue(1)
   expect(screen.queryByLabelText('Item checklist 1')).not.toBeInTheDocument()
 })
 
@@ -118,9 +183,10 @@ it('memisahkan route baru dari route edit dengan ID new', async () => {
   await userEvent.type(screen.getByLabelText('Judul tugas'), 'Rancangan baru')
   await userEvent.click(screen.getByRole('button', { name: 'Tambah item checklist' }))
   await userEvent.click(screen.getByRole('link', { name: 'Buka edit ID new' }))
-  expect(screen.getByLabelText('Judul tugas')).toHaveValue('')
-  expect(screen.getByLabelText('Judul tugas')).toBeDisabled()
+  await waitFor(() => expect(screen.getByLabelText('Judul tugas')).toHaveValue('Tugas new'))
+  expect(screen.getByLabelText('Judul tugas')).toBeEnabled()
   expect(screen.queryByLabelText('Item checklist 1')).not.toBeInTheDocument()
+  expect(getTask).toHaveBeenCalledWith('new')
   await userEvent.click(screen.getByRole('link', { name: 'Buka baru' }))
   expect(screen.getByLabelText('Judul tugas')).toHaveValue('')
   expect(screen.getByLabelText('Judul tugas')).toBeEnabled()
@@ -131,6 +197,7 @@ it('menjaga identitas item dan field lain ketika draft checklist diubah', async 
   renderForm()
   await user.type(screen.getByLabelText('Judul tugas'), 'Judul lokal')
   await user.type(screen.getByLabelText('Deskripsi'), 'Arahan lokal')
+  await user.clear(screen.getByLabelText('Bobot'))
   await user.type(screen.getByLabelText('Bobot'), '3.5')
   const due = screen.getByLabelText('Tenggat')
   await user.type(due, '2026-12-01T09:30')

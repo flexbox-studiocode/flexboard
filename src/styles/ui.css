@@ -57,7 +57,8 @@
 .modal::backdrop { background: #17203385; backdrop-filter: blur(3px); }
 .modal__heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
 .modal__heading h2 { font-family: var(--font-display); margin: 0; font-size: 1.5rem; }
-.dialog-actions { display: flex; justify-content: flex-end; gap: .65rem; margin-top: 1.5rem; }
+.dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .65rem; margin-top: 1.5rem; }
+@media (max-width: 480px) { .dialog-actions { flex-direction: column; } }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 600px) { .page-header { align-items: flex-start; flex-direction: column; } .page-header__actions { width: 100%; } .page-header__actions > * { flex: 1; } }

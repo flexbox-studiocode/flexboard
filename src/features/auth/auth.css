@@ -17,5 +17,15 @@
 .auth-status p { margin: .5rem 0 0; color: var(--color-muted); line-height: 1.8; }
 .auth-preview-link { display: block; margin-top: 1rem; font-size: .8rem; font-weight: 600; text-align: center; }
 .auth-note { margin: .5rem 0 0; text-align: center; color: var(--color-muted); font-size: .7rem; }
-@media (min-width: 1200px) { .auth-main { padding-block: 7.75rem; } .auth-card { width: min(915px, 100%); min-height: 962px; padding: 3.125rem 4.1875rem 2rem 4.875rem; } .auth-card::before { inset: -29px 53px -34px 50px; } .auth-form { gap: 3.875rem; margin-top: 2.75rem; } .auth-form .field { gap: 1.625rem; } .auth-form .field + .field { gap: 1.3125rem; } .auth-form .field > label { font-size: 1.5rem; } .auth-form .field input { min-height: 74px; padding-inline: 3.5625rem; font-size: 1.5rem; } .auth-form .button { min-height: 74px; margin-top: 2.375rem; font-size: 1.5rem; } .auth-help { margin-block: 2rem; font-size: var(--font-size-control); } .auth-card > .muted { font-size: var(--font-size-control); } .auth-status { font-size: var(--font-size-control); } }
+@media (min-width: 851px) {
+  .auth-main { padding-block: 3rem; }
+  .auth-card { width: min(650px, 100%); padding: 2rem 2.5rem; }
+  .auth-card h1 { line-height: 1.2; }
+  .auth-form { gap: 1.5rem; margin-block: 1.75rem 1rem; }
+  .auth-form .field { gap: .625rem; }
+  .auth-form .field > label { font-size: 1rem; }
+  .auth-form .field input { min-height: 52px; padding: .625rem 1rem; font-size: var(--font-size-control); }
+  .auth-form .button { min-height: 48px; margin-top: .5rem; font-size: var(--font-size-control); }
+  .auth-help { margin-block: 1.25rem; }
+}
 @media (max-width: 600px) { .auth-main { padding-block: 3rem; } .auth-card { padding: 2rem 1.25rem; } .auth-card::before { inset-inline: 20px; } .auth-card h1 { font-size: 1.8rem; } .auth-form { gap: 1.75rem; margin-top: 2rem; } .auth-form .button { margin-top: .5rem; font-size: 1rem; } .auth-form .field input { padding-inline: 1rem; font-size: 1rem; } }

@@ -1,5 +1,19 @@
 import { expect, test } from '@playwright/test'
 
+const writes = new WeakMap()
+test.beforeEach(async ({ page }) => {
+  const requests = []
+  writes.set(page, requests)
+  page.on('request', request => {
+    if (new URL(request.url()).pathname.startsWith('/api/') && request.method() !== 'GET') requests.push(`${request.method()} ${request.url()}`)
+  })
+  await page.route('**/api/auth/me', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.fallback())
+  await page.route('**/api/tasks', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.fallback())
+})
+test.afterEach(async ({ page }) => {
+  expect(writes.get(page), 'pratinjau tidak mengirim mutasi API').toEqual([])
+})
+
 async function expectLoginFocus(page, previousScrollY = 0) {
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.locator('#login-main')).toBeFocused()
