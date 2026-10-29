@@ -6,16 +6,19 @@ async function expectLoginFocus(page, previousScrollY = 0) {
   await expect(page.locator('#login-main')).toHaveAttribute('tabindex', '-1')
   const scroll = await page.evaluate(() => ({ y: window.scrollY, max: Math.max(0, document.documentElement.scrollHeight - innerHeight) }))
   expect(scroll.y).toBe(Math.min(previousScrollY, scroll.max))
-  await expect(page.getByLabel('Identitas akun')).toBeDisabled()
-  await expect(page.getByLabel('Password')).toBeDisabled()
-  await expect(page.getByRole('button', { name: 'Masuk belum tersedia' })).toBeDisabled()
+  await expect(page.getByLabel('Email', { exact: true })).toBeEnabled()
+  await expect(page.getByLabel('Password', { exact: true })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Masuk', exact: true })).toBeEnabled()
+  await expect(page.getByRole('status')).toContainText('Autentikasi tersedia')
 }
 
 for (const entry of ['profil', 'status']) {
   test(`navigasi login desktop dari ${entry} memindahkan fokus tanpa menggulir`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await page.goto('/')
-    let link = page.getByRole('link', { name: 'Status login', exact: true })
+    const session = page.getByRole('complementary', { name: 'Status sesi' })
+    await expect(session).toContainText('Layanan autentikasi tidak tersedia.')
+    let link = session.getByRole('link', { name: 'Masuk', exact: true })
     if (entry === 'profil') {
       await page.getByRole('button', { name: 'Buka profil akun' }).focus()
       await page.keyboard.press('Enter')
@@ -59,7 +62,13 @@ for (const width of [390, 1440]) {
     await page.keyboard.press('Enter')
     await expect(page.locator('#login-main')).toBeFocused()
     await page.keyboard.press('Tab')
-    await expect(page.getByRole('link', { name: 'Lihat pratinjau antarmuka' })).toBeFocused()
+    await expect(page.getByLabel('Email', { exact: true })).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(page.getByLabel('Password', { exact: true })).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('button', { name: 'Masuk', exact: true })).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('link', { name: 'Kembali', exact: true })).toBeFocused()
   })
 }
 

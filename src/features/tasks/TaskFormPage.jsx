@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Button, Input, PageHeader, Panel, Select, Textarea, UnavailableState } from '../../components/ui/index.js'
 import { SectionHeading } from '../common/FeatureUI.jsx'
 import ChecklistDraft from './ChecklistDraft.jsx'
+import { ScrollReveal } from '../../components/ui/ScrollReveal.jsx'
 import './tasks.css'
 
 export default function TaskFormPage() {
@@ -50,10 +51,10 @@ function TaskForm({ editing }) {
           <div className="task-form-actions"><Link className="button button--secondary" to="/tasks">Kembali</Link><Button type="submit" disabled><Save size={16} aria-hidden="true" />Simpan tugas</Button></div>
         </form>
       </Panel>
-      <details className="task-form-help">
+      <ScrollReveal><details className="task-form-help">
         <summary>Tentang pratinjau ini</summary>
         <ul className="task-form-guidance"><li>Belum ada tugas atau perubahan yang dibuat.</li><li>Daftar proyek dan anggota mengikuti akses dari server.</li><li>Aturan status, prioritas, bobot, dan review perlu dikonfirmasi.</li><li>Izin membuat atau mengedit akan diverifikasi oleh backend.</li></ul>
-      </details>
+      </details></ScrollReveal>
     </div>
   </div>
 }
