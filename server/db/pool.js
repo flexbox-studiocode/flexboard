@@ -1,7 +1,14 @@
 import pg from 'pg';
 
-const { Pool } = pg;
+const { Pool, types } = pg;
 let pool;
+
+// A PostgreSQL DATE (no time, no zone) must never be converted into an instant.
+// The default parser builds a JS Date at local midnight, and JSON.stringify then renders it as
+// a UTC ISO string, which shifts the calendar day backwards for any timezone east of UTC
+// (e.g. Asia/Jakarta becomes the previous day). Parse DATE columns as plain 'YYYY-MM-DD' text
+// so the day the user picked is exactly the day stored and shown.
+types.setTypeParser(types.builtins.DATE, value => value);
 
 export function getDatabaseUrl() {
   const value = process.env.DATABASE_URL;

@@ -5,12 +5,13 @@ import settleMotion from '../../components/ui/settleMotion.js'
 import useEntryMotion from '../../components/ui/useEntryMotion.js'
 
 // Only user-entered form state. No task, progress, or completion is simulated.
-export default function ChecklistDraft({ items = [], onChange, members = [], disabled = false }) {
+export default function ChecklistDraft({ items = [], onChange, members = [], selectedIds = [], disabled = false }) {
   const descriptionId = useId()
   const nextId = useRef(1)
   const fieldset = useRef(null)
   const pendingFocus = useRef(null)
   const readOnly = disabled || typeof onChange !== 'function'
+  const selectedSet = new Set(selectedIds)
   useEntryMotion(fieldset)
 
   useLayoutEffect(() => {
@@ -61,7 +62,7 @@ export default function ChecklistDraft({ items = [], onChange, members = [], dis
     <p id={descriptionId} className="muted">Susun item pekerjaan dengan judul, deskripsi, dan penanggung jawab. Item disimpan bersama task saat form dikirim.</p>
     <div className="stack">
       {items.map((item, index) => <div key={item.id} data-checklist-id={item.id} data-motion-entry className="checklist-draft__row" onFocusCapture={settleMotion} onAnimationEnd={settleMotion}>
-        <Input label={`Item checklist ${index + 1}`} value={item.title} onChange={event => updateItem(item.id, 'title', event.target.value)} autoComplete="off" required /><IconButton label={`Hapus item checklist ${index + 1}`} onClick={() => removeItem(item.id)}><Trash2 size={18} aria-hidden="true" /></IconButton><Textarea label="Deskripsi pekerjaan" value={item.description || ''} onChange={event => updateItem(item.id, 'description', event.target.value)} rows={3} /><Select label="Penanggung jawab" value={item.assigneeId || ''} onChange={event => updateItem(item.id, 'assigneeId', event.target.value)}><option value="">Pilih penanggung jawab</option>{members.map(member => <option key={member.id} value={member.id}>{member.display_name || member.displayName}{member.job_title ? ` — ${member.job_title}` : ''}</option>)}</Select>
+        <Input label={`Item checklist ${index + 1}`} value={item.title} onChange={event => updateItem(item.id, 'title', event.target.value)} autoComplete="off" required /><IconButton label={`Hapus item checklist ${index + 1}`} onClick={() => removeItem(item.id)}><Trash2 size={18} aria-hidden="true" /></IconButton><Textarea label="Deskripsi pekerjaan" value={item.description || ''} onChange={event => updateItem(item.id, 'description', event.target.value)} rows={3} /><Select label="Penanggung jawab" value={item.assigneeId || ''} onChange={event => updateItem(item.id, 'assigneeId', event.target.value)}><option value="">Pilih penanggung jawab</option>{members.filter(member => selectedSet.has(member.id)).map(member => <option key={member.id} value={member.id}>{member.display_name || member.displayName}{member.job_title ? ` — ${member.job_title}` : ''}</option>)}</Select>
       </div>)}
     </div>
     <Button variant="secondary" data-add-checklist onClick={addItem}><Plus size={17} aria-hidden="true" />Tambah item checklist</Button>

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForFonts } from './waitForFonts.js'
 
 for (const width of [320, 390, 768, 1440]) {
   test(`kontrol filter seragam dan chevron memiliki ruang pada ${width}px`, async ({ page }, testInfo) => {
@@ -6,7 +7,7 @@ for (const width of [320, 390, 768, 1440]) {
     let reference
     for (const route of ['/tasks', '/team-progress', '/activity', '/members']) {
       await page.goto(route)
-      await page.evaluate(() => document.fonts.ready)
+      await waitForFonts(page)
       const controls = await page.locator('.feature-filters input, .feature-filters select').evaluateAll(elements => elements.map(element => {
         const style = getComputedStyle(element)
         const box = element.getBoundingClientRect()

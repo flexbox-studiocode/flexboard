@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForFonts } from './waitForFonts.js'
 
 // Layout intent and CSS-pixel bounds, not pixel-perfect screenshot comparisons.
 // API fixtures are read-only; these tests must never persist domain changes.
@@ -25,7 +26,7 @@ async function mockReadOnlyApi(page, authenticated = false) {
 
 async function ready(page, route) {
   await page.goto(route)
-  await page.evaluate(() => document.fonts.ready)
+  await waitForFonts(page)
 }
 
 async function assertLayout(page, width, route) {

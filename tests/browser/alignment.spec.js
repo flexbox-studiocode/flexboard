@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForFonts } from './waitForFonts.js'
 
 const screens = [
   ['beranda', '/', 'Beranda'],
@@ -18,7 +19,7 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 1000 })
     for (const [name, route, heading] of screens) {
       await page.goto(route)
-      await page.evaluate(() => document.fonts.ready)
+      await waitForFonts(page)
       await expect(page.locator('h1')).toHaveCount(1)
       if (heading) await expect(page.getByRole('heading', { level: 1, name: heading, exact: true })).toBeVisible()
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), route).toBe(true)

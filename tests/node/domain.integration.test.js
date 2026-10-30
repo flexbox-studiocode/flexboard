@@ -100,8 +100,9 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     assert.equal(items.length, 2);
     assert.equal((await call(handler, 'PATCH', `tasks/${task.id}/checklist/${items[0].id}`, member.cookie, { completed: true })).statusCode, 200);
     assert.equal((await call(handler, 'PATCH', `tasks/${task.id}/checklist/${items[1].id}`, member.cookie, { completed: true })).statusCode, 403);
+    // Members may not add checklist items; only managers may edit the checklist structure.
     const added = await call(handler, 'POST', `tasks/${task.id}/checklists`, member.cookie, { items: [{ title: 'Third' }] });
-    assert.equal(added.statusCode, 201);
+    assert.equal(added.statusCode, 403);
     assert.equal((await call(handler, 'POST', `tasks/${task.id}/comments`, member.cookie, { body: 'Member comment' })).statusCode, 201);
     assert.equal((await call(handler, 'POST', `tasks/${task.id}/updates`, member.cookie, { workSummary: 'Member update', blockers: 'None' })).statusCode, 201);
     assert.equal((await call(handler, 'GET', `tasks/${task.id}/comments`, leader.cookie)).body.data.comments.length, 1);
@@ -110,7 +111,7 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     const progress = (await call(handler, 'GET', 'progress/team', member.cookie)).body.data.progress;
     const calculated = progress.find(row => row.id === task.id);
     const empty = progress.find(row => row.title === 'No Checklist');
-    assert.equal(calculated.completion_percent, '33.33');
+    assert.equal(calculated.completion_percent, '50.00');
     assert.equal(empty.completion_percent, null);
     assert.equal(empty.progress_unavailable_reason, 'NO_ACTIVE_CHECKLIST');
 
@@ -135,13 +136,16 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     assert.equal(active[0].assignee_id, member.id);
     const archivedFirst = await pool.query('SELECT archived_at FROM checklist_items WHERE id=$1', [firstItem.id]);
     assert.ok(archivedFirst.rows[0].archived_at instanceof Date);
-    const createdThird = await pool.query('SELECT archived_at FROM checklist_items WHERE task_id=$1 AND title=$2', [task.id, 'Third']);
-    assert.ok(createdThird.rows[0].archived_at instanceof Date);
+    const createdThird = await pool.query('SELECT count(*)::int AS n FROM checklist_items WHERE task_id=$1 AND title=$2', [task.id, 'Third']);
+    assert.equal(createdThird.rows[0].n, 0);
     // Completed state on the retained row survives the sync rather than being reset by the edit.
     assert.equal(active[0].is_completed, false);
     assert.equal(firstItem.is_completed, true);
     const activityAfterSync = await pool.query("SELECT metadata FROM activity_logs WHERE task_id=$1 AND action='task.updated' ORDER BY created_at DESC LIMIT 1", [task.id]);
-    assert.equal(activityAfterSync.rows[0].metadata.checklist.archived, 2);
+    // Before this sync there were two active items (First, Second). The payload keeps Second (by id)
+    // and adds Fourth, so only First is soft-deleted. "Third" was never created because the earlier
+    // member POST was rejected (403), so archived must be 1, not 2.
+    assert.equal(activityAfterSync.rows[0].metadata.checklist.archived, 1);
 
     // Authorization is unchanged: members cannot rewrite task fields or the checklist structure.
     assert.equal((await call(handler, 'PATCH', `tasks/${task.id}`, member.cookie, { checklist: [] })).statusCode, 403);

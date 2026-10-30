@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Info, Save } from 'lucide-react'
 import { Link, useMatch, useNavigate, useParams } from 'react-router-dom'
-import { Button, Input, PageHeader, Panel, Select, Textarea, UnavailableState } from '../../components/ui/index.js'
+import { Button, DatePicker, Input, PageHeader, Panel, Select, Textarea, UnavailableState } from '../../components/ui/index.js'
 import { SectionHeading } from '../common/FeatureUI.jsx'
 import ChecklistDraft from './ChecklistDraft.jsx'
+import AssigneePicker from './AssigneePicker.jsx'
+import './assignee-picker.css'
 import { ScrollReveal } from '../../components/ui/ScrollReveal.jsx'
 import { createTask, getTask, listMembers, listProjectMembers, listProjects, updateTask } from './taskApi.js'
 import { useAuth } from '../auth/AuthContext.jsx'
@@ -11,6 +13,15 @@ import { toChecklistItem } from '../common/apiAdapters.js'
 import './tasks.css'
 
 const initial = { title: '', description: '', dueAt: '', weight: '1', projectId: '', assigneeIds: [], priority: 'medium', status: 'todo', checklist: [] }
+const categoryLabels = { corporate_enterprise: 'Corporate & Enterprise', startup_sme: 'Startup & SME (UMKM)', government_public: 'Government & Public Sector', educational_community: 'Educational & Community' }
+const categoryLabel = value => categoryLabels[value] || value || ''
+// The Tenggat is a calendar day. Accept an ISO date or an ISO datetime and keep only the day,
+// so no timezone conversion can shift the displayed or stored deadline.
+const dayOf = value => {
+  if (typeof value !== 'string') return ''
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/)
+  return match ? match[1] : ''
+}
 
 export default function TaskFormPage() {
   const { id } = useParams()
@@ -38,7 +49,7 @@ function TaskForm({ editing, id }) {
             ...initial,
             ...raw,
             projectId: raw.project_id || raw.projectId || '',
-            dueAt: raw.due_at || raw.dueAt || '',
+            dueAt: dayOf(raw.due_at) || dayOf(raw.dueAt),
             assigneeIds: Array.isArray(raw.assignees) ? raw.assignees.map(x => x.id) : [],
             checklist: (Array.isArray(raw.checklist) ? raw.checklist : []).map(toChecklistItem),
           })
@@ -56,7 +67,10 @@ function TaskForm({ editing, id }) {
       if (!active) return
       const next = Array.isArray(data?.members) ? data.members : Array.isArray(data) ? data : []
       setProjectScope({ projectId, members: next })
-      setDraft(x => ({ ...x, assigneeIds: x.assigneeIds.filter(memberId => next.some(member => member.id === memberId)) }))
+      setDraft(x => {
+        const keep = new Set(next.map(member => member.id))
+        return { ...x, assigneeIds: x.assigneeIds.filter(id => keep.has(id)), checklist: x.checklist.map(item => item.assigneeId && !keep.has(item.assigneeId) ? { ...item, assigneeId: '' } : item) }
+      })
     }).catch(() => { if (active) { setProjectScope({ projectId, members: [] }); setError('Anggota proyek gagal dimuat.') } })
     return () => { active = false }
   }, [draft.projectId])
@@ -64,13 +78,8 @@ function TaskForm({ editing, id }) {
   const update = e => {
     const { name, value } = e.target
     setDraft(x => name === 'projectId'
-      ? { ...x, projectId: value, assigneeIds: [], checklist: [], assigneeSearch: '' }
+      ? { ...x, projectId: value, assigneeIds: [], checklist: [] }
       : { ...x, [name]: value })
-  }
-
-  const updateAssignees = e => {
-    const selected = [...e.target.selectedOptions].map(option => option.value)
-    setDraft(x => ({ ...x, assigneeIds: selected }))
   }
 
   const submit = async e => {
@@ -101,21 +110,16 @@ function TaskForm({ editing, id }) {
           <div className="task-form-fields">
             <div className="task-form-hero-row">
               <Input label="Judul tugas" name="title" value={draft.title} onChange={update} required />
-              <Input label="Tenggat" name="dueAt" type="datetime-local" value={draft.dueAt} onChange={update} />
+              <DatePicker label="Tenggat" id="task-due-date" value={draft.dueAt} onChange={value => setDraft(x => ({ ...x, dueAt: value }))} />
             </div>
             <Textarea label="Deskripsi" name="description" value={draft.description || ''} onChange={update} rows={6} />
             <Select label="Proyek" name="projectId" value={draft.projectId} onChange={update} required>
               <option value="">Pilih proyek</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.category ? ` · ${categoryLabel(p.category)}` : ''}</option>)}
             </Select>
-            {!projects.length && <p className="muted">Belum ada proyek yang tersedia. Silakan buat proyek terlebih dahulu melalui menu pengelolaan proyek.</p>}
-            <div className="field">
-              <label htmlFor="task-assignees">Penanggung jawab</label>
-              <select id="task-assignees" name="assigneeIds" multiple value={draft.assigneeIds} onChange={updateAssignees} disabled={!members.length} aria-describedby="task-assignees-hint">
-                {members.map(member => <option key={member.id} value={member.id}>{member.display_name || member.displayName}{member.job_title ? ` — ${member.job_title}` : ''}</option>)}
-              </select>
-              <small id="task-assignees-hint" className="field__hint">{draft.projectId ? (members.length ? 'Pilih satu atau beberapa anggota proyek.' : 'Proyek ini belum memiliki anggota aktif.') : (members.length ? 'Daftar anggota aktif. Pilih proyek untuk membatasi ke anggota proyek.' : 'Belum ada anggota aktif yang dapat ditugaskan.')}</small>
-            </div>
+            {!projects.length && <p className="muted">Belum ada proyek aktif yang dapat Anda akses. Buat proyek terlebih dahulu — jika Anda Leader atau Admin, gunakan pengelolaan proyek di Beranda.</p>}
+            {draft.projectId && projectScope.projectId === draft.projectId && !projectMembers.length && <p className="muted">Proyek ini belum memiliki anggota aktif. Tambahkan anggota proyek terlebih dahulu agar tugas dapat ditugaskan.</p>}
+            <AssigneePicker members={members} selected={draft.assigneeIds} onChange={ids => setDraft(x => ({ ...x, assigneeIds: ids, checklist: x.checklist.map(item => ids.includes(item.assigneeId) ? item : { ...item, assigneeId: '' }) }))} disabled={!members.length} />
             <div className="task-form-row">
               <Input label="Bobot" name="weight" type="number" min="0.01" step="any" value={draft.weight} onChange={update} required />
               <Select label="Prioritas" name="priority" value={draft.priority} onChange={update}>
@@ -130,7 +134,7 @@ function TaskForm({ editing, id }) {
                 <option value="done">Selesai</option>
               </Select>
             </div>
-            <ChecklistDraft items={draft.checklist} members={members} onChange={updateChecklist} disabled={false} />
+            <ChecklistDraft items={draft.checklist} members={members} selectedIds={draft.assigneeIds} onChange={updateChecklist} disabled={false} />
           </div>
           <div className="task-save-notice"><Info size={18} aria-hidden="true" /><p>Perubahan dikirim ke server.</p></div>
           <div className="task-form-actions">

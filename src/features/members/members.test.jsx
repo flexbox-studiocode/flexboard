@@ -1,25 +1,29 @@
-import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MemberCard from './MemberCard.jsx'
-import { AccountManagementForm } from './AccountManagementDialog.jsx'
 import { MemoryRouter } from 'react-router-dom'
 import MembersPage from './MembersPage.jsx'
+import AddMemberDialog from './AddMemberDialog.jsx'
+import EditMemberDialog from './EditMemberDialog.jsx'
+
+// The Members page reads the live API. We stub fetch so no real network happens in unit tests.
+const jsonResponse = (status, body) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  json: async () => body,
+})
+
+beforeEach(() => { vi.restoreAllMocks() })
 
 describe('Members page alignment', () => {
-  it('uses one team panel without fabricated counts and retains account preview', async () => {
+  it('fails closed with an unavailable state when the API rejects, never fabricating counts', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(403, { error: { code: 'FORBIDDEN' } })))
     const { container } = render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><MembersPage /></MemoryRouter>)
     const panel = screen.getByRole('region', { name: 'Daftar anggota' })
-    expect(within(panel).getByRole('heading', { name: 'Daftar anggota belum dapat dimuat' })).toBeInTheDocument()
+    expect(await within(panel).findByRole('heading', { name: 'Daftar anggota gagal dimuat' })).toBeInTheDocument()
     expect(container.querySelector('.feature-metric')).not.toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Proyek' })).toBeDisabled()
-    const dialog = container.querySelector('dialog')
-    dialog.showModal = vi.fn(() => dialog.setAttribute('open', ''))
-    dialog.close = vi.fn(() => dialog.removeAttribute('open'))
-    await userEvent.click(screen.getByRole('button', { name: 'Pratinjau pengelolaan akun' }))
-    expect(dialog.showModal).toHaveBeenCalledOnce()
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Simpan perubahan' })).toBeDisabled()
+    vi.unstubAllGlobals()
   })
 })
 
@@ -44,6 +48,19 @@ describe('MemberCard', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('value', '0')
   })
 
+  it('renders role badge and per-target management actions from permissions', async () => {
+    const onEdit = vi.fn(() => {})
+    const onDeactivate = vi.fn(() => {})
+    render(<MemberCard id="m1" name="Kiandra" role="member" jobTitle="Backend Developer" is_active activeTaskCount={3} progress={60} permissions={{ edit: true, deactivate: true }} onEdit={onEdit} onDeactivate={onDeactivate} />)
+    expect(screen.getByText('Member')).toBeInTheDocument()
+    expect(screen.getByText('Aktif')).toBeInTheDocument()
+    expect(screen.getByText('Tugas aktif').nextElementSibling).toHaveTextContent('3')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    expect(onEdit).toHaveBeenCalledWith('m1')
+    await userEvent.click(screen.getByRole('button', { name: 'Nonaktifkan' }))
+    expect(onDeactivate).toHaveBeenCalledWith('m1')
+  })
+
   it('does not display invalid measurements as facts', () => {
     const { rerender } = render(<MemberCard activeTaskCount={-1} progress={101} />)
     expect(screen.getByText('Tugas aktif').nextElementSibling).toHaveTextContent('—')
@@ -54,30 +71,69 @@ describe('MemberCard', () => {
   })
 })
 
-describe('AccountManagementForm preview content', () => {
-  it('allows closing the preview without changing account data', async () => {
-    let closeCount = 0
-    render(<AccountManagementForm onClose={() => { closeCount += 1 }} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Tutup pratinjau' }))
-    expect(closeCount).toBe(1)
+describe('AddMemberDialog', () => {
+  it('blocks submit when passwords mismatch and shows a clear error without calling the API', async () => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    render(<MemoryRouter><AddMemberDialog open onClose={() => {}} /></MemoryRouter>)
+    await userEvent.type(screen.getByLabelText('Nama tampilan'), 'Anggota Baru')
+    await userEvent.type(screen.getByLabelText('Email'), 'baru@example.test')
+    await userEvent.type(screen.getByLabelText('Password awal'), 'rahasia123')
+    await userEvent.type(screen.getByLabelText('Konfirmasi password awal'), 'beda12345')
+    await userEvent.click(screen.getByRole('button', { name: 'Buat akun' }))
+    expect(await screen.findByRole('heading', { name: 'Konfirmasi password tidak cocok.' })).toBeInTheDocument()
+    expect(fetchSpy).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
   })
 
-  it('disables unknown enum controls and saving without provisioning actions', async () => {
-    const { container } = render(<AccountManagementForm />)
-    for (const label of ['Peran akun', 'Status akun']) {
-      const select = screen.getByRole('combobox', { name: label })
-      expect(select).toBeDisabled()
-      expect(select).toHaveValue('')
-      expect(within(select).getAllByRole('option')).toHaveLength(1)
-      expect(within(select).getByRole('option')).toHaveValue('')
-    }
-    const save = screen.getByRole('button', { name: 'Simpan perubahan' })
-    expect(save).toBeDisabled()
-    await userEvent.click(save)
-    expect(screen.getByText(/bukan akses pengelolaan akun/)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /undang|reset|buat akun/i })).not.toBeInTheDocument()
-    const submit = new Event('submit', { bubbles: true, cancelable: true })
-    fireEvent(container.querySelector('form'), submit)
-    expect(submit.defaultPrevented).toBe(true)
+  it('only offers the admin role when the actor may create admins', () => {
+    render(<MemoryRouter><AddMemberDialog open onClose={() => {}} canCreateAdmin={false} /></MemoryRouter>)
+    const role = screen.getByLabelText('Role')
+    expect(within(role).queryByRole('option', { name: 'Admin' })).not.toBeInTheDocument()
+  })
+
+  it('creates the member through the API and never echoes a password back', async () => {
+    const fetchSpy = vi.fn(async () => jsonResponse(201, { data: { member: { id: 'new', display_name: 'Anggota Baru', role: 'member' } } }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const onCreated = vi.fn()
+    render(<MemoryRouter><AddMemberDialog open onClose={() => {}} onCreated={onCreated} /></MemoryRouter>)
+    await userEvent.type(screen.getByLabelText('Nama tampilan'), 'Anggota Baru')
+    await userEvent.type(screen.getByLabelText('Email'), 'baru@example.test')
+    await userEvent.type(screen.getByLabelText('Password awal'), 'rahasia123')
+    await userEvent.type(screen.getByLabelText('Konfirmasi password awal'), 'rahasia123')
+    await userEvent.click(screen.getByRole('button', { name: 'Buat akun' }))
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith('/api/members', expect.objectContaining({ method: 'POST' })))
+    const [, init] = fetchSpy.mock.calls[0]
+    const sent = JSON.parse(init.body)
+    expect(sent).toMatchObject({ displayName: 'Anggota Baru', email: 'baru@example.test', role: 'member' })
+    expect(await screen.findByText(/berhasil dibuat/)).toBeInTheDocument()
+    // The success screen must warn that the password is not shown again.
+    expect(screen.getByText(/Password tidak ditampilkan di sini/)).toBeInTheDocument()
+    expect(onCreated).toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('EditMemberDialog', () => {
+  it('sends only the changed fields and includes role when the actor may change roles', async () => {
+    const fetchSpy = vi.fn(async () => jsonResponse(200, { data: { member: { id: 'm1', role: 'admin' } } }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const member = { id: 'm1', display_name: 'Kiandra', job_title: 'Backend', role: 'member', email: 'k@example.test' }
+    render(<MemoryRouter><EditMemberDialog open onClose={() => {}} member={member} canChangeRole /></MemoryRouter>)
+    await userEvent.clear(screen.getByLabelText('Job title'))
+    await userEvent.type(screen.getByLabelText('Job title'), 'Lead Backend')
+    await userEvent.selectOptions(screen.getByLabelText('Role'), 'admin')
+    await userEvent.click(screen.getByRole('button', { name: 'Simpan perubahan' }))
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1))
+    const [, init] = fetchSpy.mock.calls[0]
+    expect(JSON.parse(init.body)).toEqual({ jobTitle: 'Lead Backend', role: 'admin' })
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps email read-only and hides the role selector when role changes are not permitted', () => {
+    const member = { id: 'm1', display_name: 'Kiandra', role: 'member', email: 'k@example.test' }
+    render(<MemoryRouter><EditMemberDialog open onClose={() => {}} member={member} canChangeRole={false} /></MemoryRouter>)
+    expect(screen.getByLabelText('Email')).toBeDisabled()
+    expect(screen.queryByLabelText('Role')).not.toBeInTheDocument()
   })
 })

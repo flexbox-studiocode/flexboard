@@ -25,7 +25,7 @@
   .auth-form .field { gap: .625rem; }
   .auth-form .field > label { font-size: 1rem; }
   .auth-form .field input { min-height: 52px; padding: .625rem 1rem; font-size: var(--font-size-control); }
-  .auth-form .button { min-height: 48px; margin-top: .5rem; font-size: var(--font-size-control); }
+  .auth-form .button { min-height: 48px; margin-top: .5rem; padding-block: .5rem; line-height: 1.5; font-size: var(--font-size-control); }
   .auth-help { margin-block: 1.25rem; }
 }
 @media (max-width: 600px) { .auth-main { padding-block: 3rem; } .auth-card { padding: 2rem 1.25rem; } .auth-card::before { inset-inline: 20px; } .auth-card h1 { font-size: 1.8rem; } .auth-form { gap: 1.75rem; margin-top: 2rem; } .auth-form .button { margin-top: .5rem; font-size: 1rem; } .auth-form .field input { padding-inline: 1rem; font-size: 1rem; } }

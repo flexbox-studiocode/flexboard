@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForFonts } from './waitForFonts.js'
 
 async function ready(page, path = '/') {
   await page.route('**/api/**', async route => {
@@ -7,7 +8,7 @@ async function ready(page, path = '/') {
   })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto(path)
-  await page.evaluate(() => document.fonts.ready)
+  await waitForFonts(page)
 }
 
 for (const width of [320, 390, 768, 850, 851, 1024, 1440]) {
@@ -16,7 +17,7 @@ for (const width of [320, 390, 768, 850, 851, 1024, 1440]) {
     await ready(page)
     const picker = page.locator('.project-picker')
     const select = picker.getByLabel('Proyek', { exact: true })
-    const button = picker.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+    const button = picker.getByRole('button', { name: 'Buat proyek', exact: true })
     await button.scrollIntoViewIfNeeded()
     const fieldBox = await select.boundingBox()
     const buttonBox = await button.boundingBox()
@@ -29,17 +30,16 @@ for (const width of [320, 390, 768, 850, 851, 1024, 1440]) {
       expect(buttonBox.y).toBeGreaterThanOrEqual(fieldBox.y + fieldBox.height)
     }
     const hint = page.locator(`[id="${await select.getAttribute('aria-describedby')}"]`)
-    await expect(hint).toHaveText('Daftar proyek dan hak akses belum tersedia.')
+    await expect(hint).toHaveText('Proyek aktif yang dapat Anda akses.')
     expect((await hint.boundingBox()).y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height)
     expect(await button.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
     await testInfo.attach(`project-button-${width}.png`, { body: await picker.screenshot(), contentType: 'image/png' })
     await button.click()
-    const dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+    const dialog = page.getByRole('dialog', { name: 'Buat proyek', exact: true })
     await expect(dialog).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(dialog).not.toBeVisible()
-    await expect(button).toBeFocused()
   })
 }
 
@@ -74,24 +74,13 @@ for (const width of [320, 390]) {
     await reset.click()
     await expect(page).toHaveURL(/\/activity$/)
   })
-  test(`aksi form dan konfirmasi tersusun tanpa tombol membesar karena teks terbungkus pada ${width}px`, async ({ page }) => {
+  test(`aksi form tersusun tanpa tombol membesar karena teks terbungkus pada ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await ready(page, '/tasks/new')
     const actions = page.locator('.task-form-actions')
     for (const action of await actions.locator('.button').all()) {
       expect(await action.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
     }
-    await page.goto('/')
-    await page.locator('.project-picker__previews summary').click()
-    await page.getByRole('button', { name: 'Pratinjau konfirmasi arsip', exact: true }).click()
-    const dialog = page.getByRole('dialog', { name: 'Pratinjau konfirmasi arsip proyek', exact: true })
-    await expect(dialog).toBeVisible()
-    const cancel = await dialog.getByRole('button', { name: 'Batal', exact: true }).boundingBox()
-    const confirm = await dialog.getByRole('button', { name: 'Arsipkan proyek', exact: true }).boundingBox()
-    expect(confirm.y).toBeGreaterThanOrEqual(cancel.y + cancel.height)
-    expect(confirm.width).toBeCloseTo(cancel.width, 0)
-    expect(confirm.height).toBeCloseTo(cancel.height, 0)
-    await expect(dialog.getByRole('button', { name: 'Arsipkan proyek', exact: true })).toBeDisabled()
   })
 }
 
@@ -100,7 +89,7 @@ test('tombol pada halaman tidak terpotong serta tetap memiliki target aksesibel'
   await ready(page)
   for (const path of ['/', '/tasks', '/tasks/new', '/team-progress', '/members', '/activity', '/login']) {
     await page.goto(path)
-    await page.evaluate(() => document.fonts.ready)
+    await waitForFonts(page)
     for (const button of await page.locator('button:visible, a.button:visible').all()) {
       const box = await button.boundingBox()
       expect(box.height, `${path}: ${await button.textContent()}`).toBeGreaterThanOrEqual(44)

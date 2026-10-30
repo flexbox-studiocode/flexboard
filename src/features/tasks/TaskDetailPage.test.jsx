@@ -60,8 +60,18 @@ it('metadata tidak memilih default status, bobot, tanggal, atau anggota', () => 
   expect(screen.queryByRole('list')).not.toBeInTheDocument()
 })
 
-it('membedakan checklist belum tersedia dari respons kosong tanpa menyimpulkan progres', () => {
-  const { rerender } = render(<TaskChecklistSection />)
+it('menampilkan tenggat sebagai tanggal saja (DD/MM/YYYY) tanpa jam dan tanpa pergeseran timezone', async () => {
+  useAuth.mockReturnValue({ profile: { id: 'manager', role: 'manager', capabilities: { editTask: true, archiveTask: true } } })
+  getTask.mockResolvedValue({ id: 'saved-task', title: 'Tugas bertenggat', due_at: '2026-10-30', checklist: [] })
+  listComments.mockResolvedValue([])
+  listUpdates.mockResolvedValue([])
+  render(<MemoryRouter initialEntries={['/tasks/saved-task']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="tasks/:id" element={<TaskDetailPage />} /></Routes></MemoryRouter>)
+  await waitFor(() => expect(screen.getByText('30/10/2026')).toBeInTheDocument())
+  // No time component is ever shown for the due date.
+  expect(screen.queryByText(/30\/10\/2026[ ,]+\d{2}[.:]\d{2}/)).not.toBeInTheDocument()
+})
+
+it('membedakan checklist belum tersedia dari respons kosong tanpa menyimpulkan progres', () => {  const { rerender } = render(<TaskChecklistSection />)
   expect(screen.getByRole('heading', { name: 'Checklist belum tersedia' })).toBeInTheDocument()
   rerender(<TaskChecklistSection items={[]} />)
   expect(screen.getByRole('heading', { name: 'Belum ada checklist' })).toBeInTheDocument()

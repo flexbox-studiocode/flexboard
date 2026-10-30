@@ -3,8 +3,8 @@ import ProjectForm from './ProjectForm.jsx'
 import './projects.css'
 
 /** Mount only while open; changing mode also discards the local draft. */
-export default function ProjectDialog({ open, onClose, onSaved, mode = 'new' }) {
+export default function ProjectDialog({ open, onClose, onSaved, mode = 'new', project = null }) {
   return <Modal open={open} onClose={onClose} title={mode === 'new' ? 'Buat proyek' : 'Edit proyek'}>
-    {open && <ProjectForm key={mode} mode={mode} onClose={onClose} onSaved={onSaved} />}
+    {open && <ProjectForm key={`${mode}-${project?.id || 'new'}`} mode={mode} project={project} onClose={onClose} onSaved={onSaved} />}
   </Modal>
 }

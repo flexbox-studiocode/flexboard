@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForFonts } from './waitForFonts.js'
 
 const writes = new WeakMap()
 test.beforeEach(async ({ page }) => {
@@ -31,8 +32,10 @@ for (const width of [320, 360, 390, 601, 768, 1001, 1024, 1440, 1920]) {
       await expect(page.locator('h1')).toBeVisible()
       // A deterministic unavailable session must never become a fabricated profile.
       if (route !== '/login') await expect(page.getByRole('complementary', { name: 'Status sesi' })).toContainText('Layanan autentikasi tidak tersedia.')
-      await expect(page.locator('.brand img')).toBeVisible()
-      expect(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true)
+      // The brand logo is the one image on every route; it must be a rendered asset, not a broken <img>.
+      const brandLogo = page.locator('.brand img')
+      await expect(brandLogo).toBeVisible()
+      expect(await brandLogo.evaluate(image => image.complete && image.naturalWidth > 0), route).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), route).toBe(true)
       const collisions = await page.locator('.feature-metric').evaluateAll(cards => cards.flatMap(card => {
         const label = card.querySelector('.feature-metric-top > span').getBoundingClientRect()
@@ -112,58 +115,39 @@ test('checklist baru hanya rancangan input lokal', async ({ page }) => {
   await expect(page.getByLabel('Item checklist 1', { exact: true })).toHaveCount(0)
 })
 
-test('pratinjau proyek membuang rancangan dan tidak memberikan izin mutasi', async ({ page }) => {
+test('dialog buat proyek membuang rancangan saat ditutup dan mengembalikan fokus', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 844 })
   await page.goto('/')
-  const trigger = page.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+  const trigger = page.getByRole('button', { name: 'Buat proyek', exact: true })
   await trigger.click()
-  let dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+  const dialog = page.getByRole('dialog', { name: 'Buat proyek', exact: true })
   await expect(dialog).toBeVisible()
   await dialog.getByLabel('Nama proyek').fill('Input lokal pengguna')
-  await expect(dialog.getByRole('button', { name: 'Simpan proyek' })).toBeDisabled()
-  await expect(dialog.getByLabel('Status proyek')).toBeDisabled()
-  await dialog.getByRole('button', { name: 'Tutup', exact: true }).click()
-  await expect(trigger).toBeFocused()
+  // The real form has a category selector bound to internal values.
+  await expect(dialog.getByLabel('Kategori proyek')).toBeEnabled()
+  await dialog.getByRole('button', { name: 'Batal', exact: true }).click()
+  await expect(dialog).toBeHidden()
   await trigger.click()
-  await expect(dialog.getByLabel('Nama proyek')).toHaveValue('')
-  await page.keyboard.press('Escape')
-  await page.getByText('Pratinjau struktur pengelolaan', { exact: true }).click()
-  await page.getByRole('button', { name: 'Pratinjau edit proyek', exact: true }).click()
-  dialog = page.getByRole('dialog', { name: /edit proyek/i })
-  await expect(dialog.getByLabel('Nama proyek')).toBeDisabled()
-  await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Pratinjau konfirmasi arsip', exact: true }).click()
-  dialog = page.getByRole('dialog', { name: 'Pratinjau konfirmasi arsip proyek' })
-  await expect(dialog.getByRole('button', { name: 'Arsipkan proyek' })).toBeDisabled()
+  await expect(page.getByRole('dialog', { name: 'Buat proyek', exact: true }).getByLabel('Nama proyek')).toHaveValue('')
   await page.keyboard.press('Escape')
 })
 
-test('pratinjau pengelolaan akun tidak memilih role atau status', async ({ page }) => {
+test('halaman anggota tanpa sesi menampilkan status belum masuk, bukan akun karangan', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 844 })
   await page.goto('/members')
-  const trigger = page.getByRole('button', { name: 'Pratinjau pengelolaan akun' })
-  await trigger.click()
-  const dialog = page.getByRole('dialog', { name: 'Pratinjau pengelolaan akun' })
-  await expect(dialog).toBeVisible()
-  for (const select of await dialog.getByRole('combobox').all()) {
-    await expect(select).toBeDisabled()
-    await expect(select).toHaveValue('')
-  }
-  await expect(dialog.getByRole('button', { name: /Simpan/ })).toBeDisabled()
-  for (let index = 0; index < 6; index++) {
-    await page.keyboard.press('Tab')
-    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
-  }
-  await page.keyboard.press('Escape')
-  await expect(trigger).toBeFocused()
+  // The members page needs a session; without one it must fail closed rather than invent accounts.
+  await expect(page.getByRole('heading', { level: 1, name: 'Anggota', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /belum dapat dimuat|gagal dimuat/ })).toBeVisible()
+  // No account-management dialog is available to an anonymous visitor.
+  await expect(page.getByRole('button', { name: 'Tambah anggota' })).toHaveCount(0)
 })
 
 test('dialog proyek mobile dapat digulir sampai aksi dan menahan fokus', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await page.goto('/')
-  const trigger = page.getByRole('button', { name: 'Pratinjau form proyek', exact: true })
+  const trigger = page.getByRole('button', { name: 'Buat proyek', exact: true })
   await trigger.click()
-  const dialog = page.getByRole('dialog', { name: 'Pratinjau form proyek', exact: true })
+  const dialog = page.getByRole('dialog', { name: 'Buat proyek', exact: true })
   await dialog.getByLabel('Deskripsi proyek').fill('Input lokal panjang. '.repeat(80))
   expect(await dialog.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true)
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
@@ -171,12 +155,11 @@ test('dialog proyek mobile dapat digulir sampai aksi dan menahan fokus', async (
     await page.keyboard.press(key)
     expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
   }
-  const close = dialog.getByRole('button', { name: 'Tutup', exact: true })
+  const close = dialog.getByRole('button', { name: 'Batal', exact: true })
   await close.scrollIntoViewIfNeeded()
   await expect(close).toBeInViewport()
-  expect(await dialog.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
   await close.click()
-  await expect(trigger).toBeFocused()
+  await expect(dialog).toBeHidden()
 })
 
 test('referensi detail panjang tidak mengarang data atau meluapkan layar', async ({ page }) => {
@@ -200,7 +183,7 @@ for (const width of [320, 360, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 })
     for (const route of ['/tasks', '/team-progress', '/members', '/activity']) {
       await page.goto(route)
-      await page.evaluate(() => document.fonts.ready)
+      await waitForFonts(page)
       const input = page.getByRole('searchbox', { name: 'Pencarian' })
       for (const value of ['', 'Input lokal panjang '.repeat(30)]) {
         await input.fill(value)

@@ -6,6 +6,11 @@
  */
 
 const truthyLabel = value => (typeof value === 'string' && value.trim() ? value.trim() : null)
+const dateOnlyLabel = value => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(value)) return null
+  const [year, month, day] = value.slice(0, 10).split('-')
+  return `${day}/${month}/${year}`
+}
 const numberOrNull = value => {
   const numeric = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(numeric) ? numeric : null
@@ -23,10 +28,15 @@ export function toMemberCard(profile = {}) {
   return {
     id: profile.id,
     name: profile.display_name || profile.name || null,
+    display_name: profile.display_name || profile.name || null,
+    role: profile.role || null,
+    job_title: profile.job_title || null,
     roleLabel: profile.roleLabel || assigneeRoleLabel(profile),
     statusLabel: profile.is_active === false ? 'Tidak aktif' : profile.is_active === true ? 'Aktif' : null,
+    is_active: typeof profile.is_active === 'boolean' ? profile.is_active : undefined,
     activeTaskCount: numberOrNull(profile.active_task_count),
     progress: numberOrNull(profile.progress),
+    permissions: profile.permissions || null,
   }
 }
 
@@ -43,7 +53,7 @@ export function toTaskCard(task = {}) {
     projectLabel: truthyLabel(task.project_name) || truthyLabel(task.project?.name),
     statusLabel: truthyLabel(task.status),
     priorityLabel: truthyLabel(task.priority),
-    dueLabel: truthyLabel(task.due_at || task.dueAt),
+    dueLabel: dateOnlyLabel(task.due_at || task.dueAt),
     assignees,
     progress: numberOrNull(task.completion_percent),
     progressLabel: 'Progres tugas',

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForFonts } from './waitForFonts.js'
 
 // Numeric compact-density intent checks, not pixel-perfect Figma or screenshot parity.
 // Keep readable controls while reducing desktop whitespace; mobile keeps its own layout.
@@ -23,7 +24,7 @@ function close(actual, target, label) {
 test('ukuran desktop mengikuti intent kepadatan ringkas dan font dimuat', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/')
-  await page.evaluate(() => document.fonts.ready)
+  await waitForFonts(page)
   const fonts = await page.evaluate(() => ['700 64px Oxanium', '700 24px Orbitron', '400 24px "Share Tech Mono"', '600 16px "Plus Jakarta Sans"'].map(font => ({ font, loaded: document.fonts.check(font) })))
   for (const font of fonts) expect(font.loaded, font.font).toBe(true)
 
@@ -90,7 +91,7 @@ test('padding panel tidak ditimpa CSS antarrute dan form mempertahankan proporsi
     expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(52)
     expect(await control.evaluate(element => getComputedStyle(element).fontSize)).toBe('16px')
   }
-  expect((await page.getByLabel('Penanggung jawab', { exact: true }).boundingBox()).height).toBeGreaterThanOrEqual(96)
+  expect((await page.locator('.assignee-picker__control').boundingBox()).height).toBeGreaterThanOrEqual(96)
   await expect(page.locator('input[type="file"]')).toHaveCount(0)
   // Save permission belongs to the runtime; density checks must not override it or submit writes.
   await expect(page.getByRole('button', { name: 'Simpan tugas' })).toBeVisible()
@@ -110,7 +111,7 @@ for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 })
     for (const route of ['/', '/tasks/new', '/activity', '/login']) {
       await page.goto(route)
-      await page.evaluate(() => document.fonts.ready)
+      await waitForFonts(page)
       for (const heading of await page.locator('h1, .welcome-banner h2').all()) {
         const bounds = await heading.boundingBox()
         expect(bounds.x).toBeGreaterThanOrEqual(0)

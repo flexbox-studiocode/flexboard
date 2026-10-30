@@ -13,21 +13,27 @@ import './tasks.css'
 function listValue(value) { return value?.comments || value?.updates || value?.items || value || [] }
 function author(item) { return item.author?.name || item.user?.name || item.authorName || item.author || item.createdBy?.name || 'Anggota tim' }
 function time(item) { const value = item.createdAt || item.created_at || item.updatedAt; return value ? new Date(value).toLocaleString('id-ID') : 'Waktu tidak tersedia' }
+// The Tenggat is a calendar day (DATE column). Render DD/MM/YYYY without timezone conversion.
+function formatDueDate(value) {
+  if (!value) return null
+  const match = String(value).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : null
+}
 
 /** Builds TaskChecklistSection presentation items from an API task payload. */
 function buildChecklistItems(task, profile) {
   if (!Array.isArray(task?.checklist)) return undefined
   return task.checklist.map(raw => {
     const item = toChecklistItem(raw)
-    // Leaders may toggle any item in their scope; members only their own assignment.
-    const isLeader = profile?.role === 'leader'
+    // Managers (leader/admin) may toggle any item in their scope; members only their own assignment.
+    const manager = profile?.role === 'leader' || profile?.role === 'admin'
     const owns = Boolean(profile?.id) && item.assigneeId === profile.id
     return {
       id: item.id,
       title: item.title,
       description: item.description,
       completed: item.isCompleted,
-      canEdit: Boolean(profile) && (isLeader || owns),
+      canEdit: Boolean(profile) && (manager || owns),
       assigneeLabel: item.assigneeName || item.assigneeId || null,
     }
   })
@@ -120,7 +126,7 @@ export default function TaskDetailPage() {
     </>} />
     <Panel className="feature-panel task-overview">
       <div className="task-overview__heading"><FileText size={23} /><SectionHeading title="Informasi tugas" description="Metadata tugas." /></div>
-      <TaskMetadata projectLabel={task?.project_name || task?.project?.name} assignees={(task?.assignees || []).map(person => ({ id: person.id, name: person.name || person.display_name }))} dueLabel={task?.due_at ? new Date(task.due_at).toLocaleString('id-ID') : task?.due} priorityLabel={task?.priority} statusLabel={task?.status} weightLabel={task?.weight != null ? String(task.weight) : undefined} />
+      <TaskMetadata projectLabel={task?.project_name || task?.project?.name} assignees={(task?.assignees || []).map(person => ({ id: person.id, name: person.name || person.display_name }))} dueLabel={task?.due_at ? formatDueDate(task.due_at) : task?.due} priorityLabel={task?.priority} statusLabel={task?.status} weightLabel={task?.weight != null ? String(task.weight) : undefined} />
       <section className="task-description"><h2>Deskripsi</h2><p>{task?.description || 'Deskripsi tugas belum tersedia.'}</p></section>
       {error && <UnavailableState title="Detail tugas belum dapat dimuat" description="Layanan tugas gagal diakses." />}
     </Panel>

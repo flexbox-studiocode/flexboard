@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import TaskFormPage from './TaskFormPage.jsx'
@@ -54,7 +54,9 @@ it('mengirim payload tugas dan checklist lalu membuka detail setelah server berh
   await screen.findByRole('option', { name: 'Proyek tim' })
   fireEvent.change(screen.getByLabelText('Judul tugas'), { target: { value: 'Tugas baru' } })
   await userEvent.selectOptions(screen.getByLabelText('Proyek'), 'project-1')
-  await userEvent.selectOptions(screen.getByLabelText('Penanggung jawab'), 'member-1')
+  // AssigneePicker is a search + chip UI. Wait for the project member to appear as an option.
+  const assigneeOption = await screen.findByRole('option', { name: 'Anggota tim' })
+  await userEvent.click(within(assigneeOption).getByRole('button'))
   await userEvent.click(screen.getByRole('button', { name: 'Tambah item checklist' }))
   fireEvent.change(screen.getByLabelText('Item checklist 1'), { target: { value: 'Pekerjaan pertama' } })
   await userEvent.click(screen.getByRole('button', { name: 'Simpan tugas' }))
@@ -157,7 +159,8 @@ it('memuat tugas tersimpan saat route edit berubah dan mereset form baru', async
   expect(screen.getByLabelText('Deskripsi')).toHaveValue('Arahan tersimpan')
   expect(screen.getByLabelText('Bobot')).toHaveValue(2)
   expect(screen.getByLabelText('Proyek')).toHaveValue('project-1')
-  expect(screen.getByLabelText('Penanggung jawab')).toHaveValue(['member-1'])
+  // AssigneePicker renders chips (not a select). The loaded task has member-1 assigned; the chip text is the member's display name.
+  expect(screen.getByText('Anggota tim', { selector: '.assignee-chip' })).toBeInTheDocument()
   expect(screen.queryByLabelText('Item checklist 1')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Tambah item checklist' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Simpan tugas' })).toBeEnabled()
@@ -200,7 +203,8 @@ it('menjaga identitas item dan field lain ketika draft checklist diubah', async 
   await user.clear(screen.getByLabelText('Bobot'))
   await user.type(screen.getByLabelText('Bobot'), '3.5')
   const due = screen.getByLabelText('Tenggat')
-  await user.type(due, '2026-12-01T09:30')
+  await user.click(due)
+  await user.click(screen.getByRole('button', { name: 'Today' }))
   for (let index = 0; index < 2; index += 1) {
     await user.click(screen.getByRole('button', { name: 'Tambah item checklist' }))
     await user.type(screen.getByLabelText(`Item checklist ${index + 1}`), `Item ${index + 1}`)
@@ -224,6 +228,6 @@ it('menjaga identitas item dan field lain ketika draft checklist diubah', async 
   expect(screen.getByLabelText('Judul tugas')).toHaveValue('Judul lokal diubah')
   expect(screen.getByLabelText('Deskripsi')).toHaveValue('Arahan lokal')
   expect(screen.getByLabelText('Bobot')).toHaveValue(3.5)
-  expect(due).toHaveValue('2026-12-01T09:30')
+  expect(due).toHaveValue(new Date().toLocaleDateString('id-ID'))
   expect(second).toHaveValue('Item 2')
 })
