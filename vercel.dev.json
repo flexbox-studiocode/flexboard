@@ -6,6 +6,8 @@
     { "source": "/api/tasks/:path*", "destination": "/api/tasks?__path=/api/tasks/:path*" },
     { "source": "/api/projects/:path*", "destination": "/api/projects?__path=/api/projects/:path*" },
     { "source": "/api/members/:path*", "destination": "/api/members?__path=/api/members/:path*" },
+    { "source": "/api/progress/:path*", "destination": "/api/tasks?__path=/api/progress/:path*" },
+    { "source": "/api/activity", "destination": "/api/tasks?__path=/api/activity" },
     { "source": "/api/checklists/:path*", "destination": "/api/checklists?__path=/api/checklists/:path*" }
   ]
 }
