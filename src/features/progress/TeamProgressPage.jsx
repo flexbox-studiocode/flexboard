@@ -6,14 +6,15 @@ import { FilterToolbar } from '../common/FeatureUI.jsx'
 import CollectionState from '../common/CollectionState.jsx'
 import useScopedCollection from '../common/useScopedCollection.js'
 import MemberProgressList from './MemberProgressList.jsx'
+import { toProgressEntry } from '../common/apiAdapters.js'
 import './progress.css'
 
 export default function TeamProgressPage({ progress } = {}) {
-  const [apiState, setApiState] = useState({ status: 'loading' })
+  const [apiState, setApiState] = useState({ status: 'idle' })
   useEffect(() => {
     if (progress !== undefined) return
     let active = true
-    requestTaskApi('/progress/team').then(data => active && setApiState({ status: 'success', items: data?.items || data || [] })).catch(() => active && setApiState({ status: 'error' }))
+    requestTaskApi('/progress/team').then(data => active && setApiState({ status: 'success', items: (data?.progress || data?.items || []).map(toProgressEntry) })).catch(() => active && setApiState({ status: 'error' }))
     return () => { active = false }
   }, [progress])
   const state = useScopedCollection(progress !== undefined ? progress : apiState)

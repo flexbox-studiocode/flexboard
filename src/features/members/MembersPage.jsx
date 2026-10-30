@@ -6,6 +6,7 @@ import { Button, PageHeader, Panel } from '../../components/ui/index.js'
 import { FilterToolbar } from '../common/FeatureUI.jsx'
 import CollectionState from '../common/CollectionState.jsx'
 import useScopedCollection from '../common/useScopedCollection.js'
+import { toMemberCard } from '../common/apiAdapters.js'
 import AccountManagementDialog from './AccountManagementDialog.jsx'
 import MemberCard from './MemberCard.jsx'
 import './members.css'
@@ -14,13 +15,14 @@ export default function MembersPage({ members } = {}) {
   const { pathname, search } = useLocation()
   const scope = `${pathname}${search}`
   const [managementPreviewOpen, setManagementPreviewOpen] = useState(false)
-  const [apiState, setApiState] = useState({ status: 'loading', scope })
+  // Start as unavailable until the server returns a real payload; never fabricate rows.
+  const [apiState, setApiState] = useState({ status: 'idle', scope })
   useEffect(() => {
     if (members !== undefined) return
     let active = true
     requestTaskApi('/members').then(data => {
       if (!Array.isArray(data?.members)) throw new Error('Invalid members response')
-      if (active) setApiState({ status: 'success', items: data.members, scope })
+      if (active) setApiState({ status: 'success', items: data.members.map(toMemberCard), scope })
     }).catch(() => active && setApiState({ status: 'error', scope }))
     return () => { active = false }
   }, [members, scope])
@@ -38,7 +40,7 @@ export default function MembersPage({ members } = {}) {
         errorTitle="Daftar anggota gagal dimuat">
         {items => <div className="feature-stats">{items.map(member => <MemberCard key={member.id} {...member} />)}</div>}
       </CollectionState>
-      <div className="members-access-note"><ShieldCheck size={20} aria-hidden="true" /><div><h3>Pengelolaan anggota belum aktif</h3><p>Izin akun belum diverifikasi. Undangan, perubahan peran, dan perubahan status memerlukan layanan backend.</p></div></div>
+      <div className="members-access-note"><ShieldCheck size={20} aria-hidden="true" /><div><h3>Pengelolaan anggota belum aktif</h3><p>Izin akun belum diverifikasi. Undangan, perubahan peran, dan perubahan status memerlukan layanan backend.</p><Button variant="secondary" onClick={() => setManagementPreviewOpen(true)}>Pratinjau pengelolaan akun</Button></div></div>
     </Panel>
     <AccountManagementDialog open={managementPreviewOpen} onClose={() => setManagementPreviewOpen(false)} />
   </div>

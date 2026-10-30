@@ -6,14 +6,15 @@ import { FilterToolbar } from '../common/FeatureUI.jsx'
 import CollectionState from '../common/CollectionState.jsx'
 import useScopedCollection from '../common/useScopedCollection.js'
 import ActivityList from './ActivityList.jsx'
+import { toActivityEntry } from '../common/apiAdapters.js'
 import './activity.css'
 
 export default function ActivityPage({ activity } = {}) {
-  const [apiState, setApiState] = useState({ status: 'loading' })
+  const [apiState, setApiState] = useState({ status: 'idle' })
   useEffect(() => {
     if (activity !== undefined) return
     let active = true
-    requestTaskApi('/activity').then(data => active && setApiState({ status: 'success', items: data?.items || data || [] })).catch(() => active && setApiState({ status: 'error' }))
+    requestTaskApi('/activity').then(data => active && setApiState({ status: 'success', items: (data?.activity || data?.items || []).map(toActivityEntry) })).catch(() => active && setApiState({ status: 'error' }))
     return () => { active = false }
   }, [activity])
   const state = useScopedCollection(activity !== undefined ? activity : apiState)

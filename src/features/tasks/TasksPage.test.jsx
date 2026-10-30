@@ -7,7 +7,7 @@ import TaskCard from './TaskCard.jsx'
 import { listTasks } from './taskApi.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
-vi.mock('./taskApi.js', () => ({ listTasks: vi.fn() }))
+vi.mock('./taskApi.js', () => ({ listTasks: vi.fn(), requestTaskApi: vi.fn(() => Promise.resolve({ members: [] })) }))
 vi.mock('../auth/AuthContext.jsx', () => ({ useAuth: vi.fn() }))
 beforeEach(() => {
   vi.resetAllMocks()

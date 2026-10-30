@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "devCommand": "vite --port $PORT",
   "rewrites": [
-    { "source": "/api/auth/:path*", "destination": "/api/auth?__auth_path=/api/auth/:path*" }
+    { "source": "/api/auth/:path*", "destination": "/api/auth?__auth_path=/api/auth/:path*" },
+    { "source": "/api/tasks/:path*", "destination": "/api/tasks?__path=/api/tasks/:path*" },
+    { "source": "/api/projects/:path*", "destination": "/api/projects?__path=/api/projects/:path*" },
+    { "source": "/api/members/:path*", "destination": "/api/members?__path=/api/members/:path*" },
+    { "source": "/api/checklists/:path*", "destination": "/api/checklists?__path=/api/checklists/:path*" }
   ]
 }

@@ -9,14 +9,23 @@ import useScopedCollection from '../common/useScopedCollection.js'
 import TaskCard from './TaskCard.jsx'
 import MemberProgressList from '../progress/MemberProgressList.jsx'
 import { listTasks } from './taskApi.js'
+import { toTaskCard } from '../common/apiAdapters.js'
 import './tasks.css'
 
 export default function TasksPage({ tasks, members }) {
   const { profile } = useAuth()
   const [remote, setRemote] = useState(tasks)
-  useEffect(() => { if (tasks !== undefined) return; let active = true; listTasks().then(data => active && setRemote({ status: 'success', scope: '/tasks', items: data?.items || data })).catch(() => active && setRemote({ status: 'error', scope: '/tasks' })); return () => { active = false } }, [tasks])
-  const taskState = useScopedCollection(remote)
-  const memberState = useScopedCollection(members)
+  useEffect(() => {
+    if (tasks !== undefined) return
+    let active = true
+    listTasks().then(data => {
+      if (!Array.isArray(data?.tasks)) throw new Error('Invalid tasks response')
+      if (active) setRemote({ status: 'success', scope: '/tasks', items: data.tasks.map(toTaskCard) })
+    }).catch(() => active && setRemote({ status: 'error', scope: '/tasks' }))
+    return () => { active = false }
+  }, [tasks])
+  const taskState = useScopedCollection(tasks !== undefined ? tasks : remote)
+  const memberState = useScopedCollection(members !== undefined ? members : { status: 'idle', scope: '/tasks' })
   return <div className="feature-page tasks-page">
     <PageHeader title="Tugas Kami" description="Satu ruang tugas bersama, perkembangan pekerjaan masing-masing anggota." actions={profile?.capabilities?.createTask ? <Link className="button" to="/tasks/new"><Plus size={20} strokeWidth={1.5} aria-hidden="true" />Tambah tugas</Link> : null} />
     <Panel className="feature-panel task-filters" aria-label="Pencarian dan filter tugas"><FilterToolbar placeholder="Cari judul atau deskripsi tugas…" member dates taskFilters /></Panel>

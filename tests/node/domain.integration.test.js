@@ -58,12 +58,26 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     await pool.query('INSERT INTO project_members (project_id,user_id,project_role) VALUES ($1,$2,$3)', [project.id, member.id, 'member']);
 
     const taskRes = await call(handler, 'POST', 'tasks', leader.cookie, {
-      projectId: project.id, title: 'Domain Task', assigneeIds: [member.id], checklist: [{ title: 'First' }, { title: 'Second' }], weight: 2,
+      projectId: project.id, title: 'Domain Task', assigneeIds: [member.id], checklist: [{ title: 'First', assigneeId: member.id }, { title: 'Second' }], weight: 2,
     });
     assert.equal(taskRes.statusCode, 201);
     const task = taskRes.body.data.task;
     const fixture = await pool.query('SELECT (SELECT count(*) FROM project_members WHERE project_id=$1) members, (SELECT count(*) FROM task_assignees WHERE task_id=$2) assignees, (SELECT count(*) FROM checklist_items WHERE task_id=$2) checklist', [project.id, task.id]);
     assert.deepEqual(fixture.rows[0], { members: '2', assignees: '1', checklist: '2' });
+
+    // Contract: list payload exposes project name, assignee identities with role, and derived checklist progress.
+    const projectList = (await call(handler, 'GET', 'projects', leader.cookie)).body.data.projects;
+    const listedProject = projectList.find(row => row.id === project.id);
+    assert.equal(listedProject.category, null);
+    assert.equal(listedProject.member_count, 2);
+
+    const taskList = (await call(handler, 'GET', 'tasks', leader.cookie)).body.data.tasks;
+    const listedTask = taskList.find(row => row.id === task.id);
+    assert.equal(listedTask.project_name, 'Domain Project');
+    assert.deepEqual(listedTask.assignees, [{ id: member.id, name: 'Domain Member', role: 'member' }]);
+    assert.equal(listedTask.checklist_count, 2);
+    assert.equal(listedTask.completed_checklist, 0);
+    assert.equal(listedTask.completion_percent, '0.00');
 
     const invalid = await call(handler, 'POST', 'tasks', leader.cookie, { projectId: project.id, title: '', weight: 0 });
     assert.equal(invalid.statusCode, 400);
@@ -73,11 +87,19 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     for (const [method, path, body] of [['POST', 'projects', { name: 'Denied' }], ['POST', 'tasks', { projectId: project.id, title: 'Denied' }], ['PUT', `tasks/${task.id}/assignees`, { userIds: [] }], ['POST', `tasks/${task.id}/archive`, {}]]) {
       assert.equal((await call(handler, method, path, member.cookie, body)).statusCode, 403);
     }
-    assert.equal((await call(handler, 'GET', `tasks/${task.id}`, member.cookie)).statusCode, 200);
+    const detail = await call(handler, 'GET', `tasks/${task.id}`, member.cookie);
+    assert.equal(detail.statusCode, 200);
+    assert.equal(detail.body.data.task.project_name, 'Domain Project');
+    assert.deepEqual(detail.body.data.task.assignees, [{ id: member.id, name: 'Domain Member', role: 'member' }]);
+    const firstDetailItem = detail.body.data.task.checklist.find(item => item.title === 'First');
+    assert.equal(firstDetailItem.assignee_name, 'Domain Member');
+    assert.equal(detail.body.data.task.checklist.length, 2);
+    assert.equal(detail.body.data.task.progress, detail.body.data.task.completion_percent);
 
     const items = (await call(handler, 'GET', `tasks/${task.id}/checklists`, member.cookie)).body.data.items;
     assert.equal(items.length, 2);
     assert.equal((await call(handler, 'PATCH', `tasks/${task.id}/checklist/${items[0].id}`, member.cookie, { completed: true })).statusCode, 200);
+    assert.equal((await call(handler, 'PATCH', `tasks/${task.id}/checklist/${items[1].id}`, member.cookie, { completed: true })).statusCode, 403);
     const added = await call(handler, 'POST', `tasks/${task.id}/checklists`, member.cookie, { items: [{ title: 'Third' }] });
     assert.equal(added.statusCode, 201);
     assert.equal((await call(handler, 'POST', `tasks/${task.id}/comments`, member.cookie, { body: 'Member comment' })).statusCode, 201);
@@ -91,6 +113,45 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     assert.equal(calculated.completion_percent, '33.33');
     assert.equal(empty.completion_percent, null);
     assert.equal(empty.progress_unavailable_reason, 'NO_ACTIVE_CHECKLIST');
+
+    // Contract: PATCH checklist syncs transactionally, preserving ids and completion state, updating kept rows,
+    // inserting new ones, and soft-deleting omitted items instead of hard deleting them.
+    const beforeSync = (await call(handler, 'GET', `tasks/${task.id}`, leader.cookie)).body.data.task.checklist;
+    const firstItem = beforeSync.find(item => item.title === 'First');
+    const secondItem = beforeSync.find(item => item.title === 'Second');
+    assert.equal(firstItem.is_completed, true);
+    const sync = await call(handler, 'PATCH', `tasks/${task.id}`, leader.cookie, { checklist: [
+      { id: secondItem.id, title: 'Second renamed', description: 'Updated', assigneeId: member.id, sortOrder: 0 },
+      { title: 'Fourth', assigneeId: member.id, sortOrder: 1 },
+    ] });
+    assert.equal(sync.statusCode, 200);
+    const afterSync = await call(handler, 'GET', `tasks/${task.id}/checklists`, leader.cookie);
+    assert.equal(afterSync.statusCode, 200);
+    const active = afterSync.body.data.items;
+    assert.equal(active.length, 2);
+    assert.deepEqual(active.map(item => item.title), ['Second renamed', 'Fourth']);
+    assert.equal(active[0].id, secondItem.id);
+    assert.equal(active[0].description, 'Updated');
+    assert.equal(active[0].assignee_id, member.id);
+    const archivedFirst = await pool.query('SELECT archived_at FROM checklist_items WHERE id=$1', [firstItem.id]);
+    assert.ok(archivedFirst.rows[0].archived_at instanceof Date);
+    const createdThird = await pool.query('SELECT archived_at FROM checklist_items WHERE task_id=$1 AND title=$2', [task.id, 'Third']);
+    assert.ok(createdThird.rows[0].archived_at instanceof Date);
+    // Completed state on the retained row survives the sync rather than being reset by the edit.
+    assert.equal(active[0].is_completed, false);
+    assert.equal(firstItem.is_completed, true);
+    const activityAfterSync = await pool.query("SELECT metadata FROM activity_logs WHERE task_id=$1 AND action='task.updated' ORDER BY created_at DESC LIMIT 1", [task.id]);
+    assert.equal(activityAfterSync.rows[0].metadata.checklist.archived, 2);
+
+    // Authorization is unchanged: members cannot rewrite task fields or the checklist structure.
+    assert.equal((await call(handler, 'PATCH', `tasks/${task.id}`, member.cookie, { checklist: [] })).statusCode, 403);
+    // Checklist assignees must be active task assignees, not arbitrary project members.
+    const stranger = await user('member', 'Domain Stranger');
+    await pool.query('INSERT INTO project_members (project_id,user_id,project_role) VALUES ($1,$2,$3)', [project.id, stranger.id, 'member']);
+    const badAssignee = await call(handler, 'PATCH', `tasks/${task.id}`, leader.cookie, { checklist: [{ title: 'Bad', assigneeId: stranger.id }] });
+    assert.equal(badAssignee.statusCode, 400);
+    const stillActive = (await call(handler, 'GET', `tasks/${task.id}/checklists`, leader.cookie)).body.data.items;
+    assert.equal(stillActive.length, 2);
 
     const archive = await call(handler, 'POST', `tasks/${task.id}/archive`, leader.cookie, {});
     assert.equal(archive.statusCode, 200);

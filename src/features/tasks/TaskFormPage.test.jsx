@@ -6,7 +6,7 @@ import TaskFormPage from './TaskFormPage.jsx'
 import { createTask, getTask, listMembers, listProjects, updateTask } from './taskApi.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
-vi.mock('./taskApi.js', () => ({ createTask: vi.fn(), getTask: vi.fn(), listMembers: vi.fn(), listProjectMembers: vi.fn(() => Promise.resolve({ members: [] })), listProjects: vi.fn(), updateTask: vi.fn() }))
+vi.mock('./taskApi.js', () => ({ createTask: vi.fn(), getTask: vi.fn(), listMembers: vi.fn(), listProjectMembers: vi.fn(() => Promise.resolve({ members: [{ id: 'member-1', display_name: 'Anggota tim' }] })), listProjects: vi.fn(), updateTask: vi.fn() }))
 vi.mock('../auth/AuthContext.jsx', () => ({ useAuth: vi.fn() }))
 const manager = { id: 'manager', role: 'manager', capabilities: { createTask: true, editTask: true } }
 const savedTask = id => ({ id, title: `Tugas ${id}`, description: 'Arahan tersimpan', weight: 2, project_id: 'project-1', priority: 'high', status: 'in_progress', checklist: [], assignees: [{ id: 'member-1' }] })
