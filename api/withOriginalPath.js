@@ -6,13 +6,15 @@
  */
 export function withOriginalPath(handler) {
   return async function route(request, response) {
-    const original = request.url && new URL(request.url, 'http://localhost').searchParams.get('__path')
+    const original =
+      request.url &&
+      new URL(request.url, "http://localhost").searchParams.get("__path");
     if (original) {
-      const url = new URL(request.url, 'http://localhost')
-      url.searchParams.delete('__path')
-      const query = url.searchParams.toString()
-      request.url = `${original}${query ? `?${query}` : ''}`
+      const url = new URL(request.url, "http://localhost");
+      url.searchParams.delete("__path");
+      const query = url.searchParams.toString();
+      request.url = `${original}${query ? `?${query}` : ""}`;
     }
-    return handler(request, response)
-  }
+    return handler(request, response);
+  };
 }
