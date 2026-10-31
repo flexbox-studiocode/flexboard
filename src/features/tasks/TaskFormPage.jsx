@@ -1,154 +1,371 @@
-import { useEffect, useState } from 'react'
-import { ArrowLeft, Info, Save } from 'lucide-react'
-import { Link, useMatch, useNavigate, useParams } from 'react-router-dom'
-import { Button, DatePicker, Input, PageHeader, Panel, Select, Textarea, UnavailableState } from '../../components/ui/index.js'
-import { SectionHeading } from '../common/FeatureUI.jsx'
-import ChecklistDraft from './ChecklistDraft.jsx'
-import AssigneePicker from './AssigneePicker.jsx'
-import './assignee-picker.css'
-import { ScrollReveal } from '../../components/ui/ScrollReveal.jsx'
-import { createTask, getTask, listMembers, listProjectMembers, listProjects, updateTask } from './taskApi.js'
-import { useAuth } from '../auth/AuthContext.jsx'
-import { toChecklistItem } from '../common/apiAdapters.js'
-import './tasks.css'
+import { useEffect, useState } from "react";
+import { ArrowLeft, Info, Save } from "lucide-react";
+import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
+import {
+  Button,
+  DatePicker,
+  Input,
+  PageHeader,
+  Panel,
+  Select,
+  Textarea,
+  UnavailableState,
+} from "../../components/ui/index.js";
+import { SectionHeading } from "../common/FeatureUI.jsx";
+import ChecklistDraft from "./ChecklistDraft.jsx";
+import AssigneePicker from "./AssigneePicker.jsx";
+import "./assignee-picker.css";
+import { ScrollReveal } from "../../components/ui/ScrollReveal.jsx";
+import {
+  createTask,
+  getTask,
+  listMembers,
+  listProjectMembers,
+  listProjects,
+  updateTask,
+} from "./taskApi.js";
+import { useAuth } from "../auth/AuthContext.jsx";
+import { toChecklistItem } from "../common/apiAdapters.js";
+import "./tasks.css";
 
-const initial = { title: '', description: '', dueAt: '', weight: '1', projectId: '', assigneeIds: [], priority: 'medium', status: 'todo', checklist: [] }
-const categoryLabels = { corporate_enterprise: 'Corporate & Enterprise', startup_sme: 'Startup & SME (UMKM)', government_public: 'Government & Public Sector', educational_community: 'Educational & Community' }
-const categoryLabel = value => categoryLabels[value] || value || ''
+const initial = {
+  title: "",
+  description: "",
+  dueAt: "",
+  weight: "1",
+  projectId: "",
+  assigneeIds: [],
+  priority: "medium",
+  status: "todo",
+  checklist: [],
+};
+const categoryLabels = {
+  corporate_enterprise: "Corporate & Enterprise",
+  startup_sme: "Startup & SME (UMKM)",
+  government_public: "Government & Public Sector",
+  educational_community: "Educational & Community",
+};
+const categoryLabel = (value) => categoryLabels[value] || value || "";
 // The Tenggat is a calendar day. Accept an ISO date or an ISO datetime and keep only the day,
 // so no timezone conversion can shift the displayed or stored deadline.
-const dayOf = value => {
-  if (typeof value !== 'string') return ''
-  const match = value.match(/^(\d{4}-\d{2}-\d{2})/)
-  return match ? match[1] : ''
-}
+const dayOf = (value) => {
+  if (typeof value !== "string") return "";
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : "";
+};
 
 export default function TaskFormPage() {
-  const { id } = useParams()
+  const { id } = useParams();
   // The edit route is recognised by its path, so a task whose id is literally "new" still edits.
-  const editing = Boolean(useMatch('/tasks/:id/edit'))
-  return <TaskForm key={editing ? `edit-${id}` : 'new'} editing={editing} id={editing ? id : undefined} />
+  const editing = Boolean(useMatch("/tasks/:id/edit"));
+  return (
+    <TaskForm
+      key={editing ? `edit-${id}` : "new"}
+      editing={editing}
+      id={editing ? id : undefined}
+    />
+  );
 }
 
 function TaskForm({ editing, id }) {
-  const navigate = useNavigate(); const { profile } = useAuth()
-  const [draft, setDraft] = useState(initial); const [projects, setProjects] = useState([]); const [allMembers, setAllMembers] = useState([]); const [projectScope, setProjectScope] = useState({ projectId: '', members: [] }); const [error, setError] = useState(''); const [saving, setSaving] = useState(false)
-  const projectMembers = draft.projectId && projectScope.projectId === draft.projectId ? projectScope.members : []
-  const members = draft.projectId ? projectMembers : allMembers
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+  const [draft, setDraft] = useState(initial);
+  const [projects, setProjects] = useState([]);
+  const [allMembers, setAllMembers] = useState([]);
+  const [projectScope, setProjectScope] = useState({
+    projectId: "",
+    members: [],
+  });
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const projectMembers =
+    draft.projectId && projectScope.projectId === draft.projectId
+      ? projectScope.members
+      : [];
+  const members = draft.projectId ? projectMembers : allMembers;
 
   useEffect(() => {
-    let active = true
-    Promise.all([listProjects(), listMembers(), editing ? getTask(id) : Promise.resolve(null)])
+    let active = true;
+    Promise.all([
+      listProjects(),
+      listMembers(),
+      editing ? getTask(id) : Promise.resolve(null),
+    ])
       .then(([p, m, t]) => {
-        if (!active) return
-        setProjects(Array.isArray(p?.projects) ? p.projects : Array.isArray(p) ? p : [])
-        setAllMembers(Array.isArray(m?.members) ? m.members : Array.isArray(m) ? m : [])
+        if (!active) return;
+        setProjects(
+          Array.isArray(p?.projects) ? p.projects : Array.isArray(p) ? p : [],
+        );
+        setAllMembers(
+          Array.isArray(m?.members) ? m.members : Array.isArray(m) ? m : [],
+        );
         if (t) {
-          const raw = t?.task || t
+          const raw = t?.task || t;
           setDraft({
             ...initial,
             ...raw,
-            projectId: raw.project_id || raw.projectId || '',
+            projectId: raw.project_id || raw.projectId || "",
             dueAt: dayOf(raw.due_at) || dayOf(raw.dueAt),
-            assigneeIds: Array.isArray(raw.assignees) ? raw.assignees.map(x => x.id) : [],
-            checklist: (Array.isArray(raw.checklist) ? raw.checklist : []).map(toChecklistItem),
-          })
+            assigneeIds: Array.isArray(raw.assignees)
+              ? raw.assignees.map((x) => x.id)
+              : [],
+            checklist: (Array.isArray(raw.checklist) ? raw.checklist : []).map(
+              toChecklistItem,
+            ),
+          });
         }
       })
-      .catch(() => setError('Data form gagal dimuat.'))
-    return () => { active = false }
-  }, [editing, id])
+      .catch(() => setError("Data form gagal dimuat."));
+    return () => {
+      active = false;
+    };
+  }, [editing, id]);
 
   useEffect(() => {
-    if (!draft.projectId) return
-    const projectId = draft.projectId
-    let active = true
-    listProjectMembers(projectId).then(data => {
-      if (!active) return
-      const next = Array.isArray(data?.members) ? data.members : Array.isArray(data) ? data : []
-      setProjectScope({ projectId, members: next })
-      setDraft(x => {
-        const keep = new Set(next.map(member => member.id))
-        return { ...x, assigneeIds: x.assigneeIds.filter(id => keep.has(id)), checklist: x.checklist.map(item => item.assigneeId && !keep.has(item.assigneeId) ? { ...item, assigneeId: '' } : item) }
+    if (!draft.projectId) return;
+    const projectId = draft.projectId;
+    let active = true;
+    listProjectMembers(projectId)
+      .then((data) => {
+        if (!active) return;
+        const next = Array.isArray(data?.members)
+          ? data.members
+          : Array.isArray(data)
+            ? data
+            : [];
+        setProjectScope({ projectId, members: next });
+        setDraft((x) => {
+          const keep = new Set(next.map((member) => member.id));
+          return {
+            ...x,
+            assigneeIds: x.assigneeIds.filter((id) => keep.has(id)),
+            checklist: x.checklist.map((item) =>
+              item.assigneeId && !keep.has(item.assigneeId)
+                ? { ...item, assigneeId: "" }
+                : item,
+            ),
+          };
+        });
       })
-    }).catch(() => { if (active) { setProjectScope({ projectId, members: [] }); setError('Anggota proyek gagal dimuat.') } })
-    return () => { active = false }
-  }, [draft.projectId])
+      .catch(() => {
+        if (active) {
+          setProjectScope({ projectId, members: [] });
+          setError("Anggota proyek gagal dimuat.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [draft.projectId]);
 
-  const update = e => {
-    const { name, value } = e.target
-    setDraft(x => name === 'projectId'
-      ? { ...x, projectId: value, assigneeIds: [], checklist: [] }
-      : { ...x, [name]: value })
-  }
+  const update = (e) => {
+    const { name, value } = e.target;
+    setDraft((x) =>
+      name === "projectId"
+        ? { ...x, projectId: value, assigneeIds: [], checklist: [] }
+        : { ...x, [name]: value },
+    );
+  };
 
-  const submit = async e => {
-    e.preventDefault(); setSaving(true); setError('')
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
     try {
-      const payload = { ...draft, weight: Number(draft.weight), dueAt: draft.dueAt || null }
-      const result = editing ? await updateTask(id, payload) : await createTask(payload)
-      const taskId = editing ? id : (result?.task?.id || result?.id)
-      navigate(`/tasks/${taskId}`)
+      const payload = {
+        ...draft,
+        weight: Number(draft.weight),
+        dueAt: draft.dueAt || null,
+      };
+      const result = editing
+        ? await updateTask(id, payload)
+        : await createTask(payload);
+      const taskId = editing ? id : result?.task?.id || result?.id;
+      navigate(`/tasks/${taskId}`);
     } catch (err) {
-      setError(err.message === 'HTTP_403' ? 'Anda tidak memiliki izin.' : 'Tugas gagal disimpan.')
+      setError(
+        err.message === "HTTP_403"
+          ? "Anda tidak memiliki izin."
+          : "Tugas gagal disimpan.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
-  const updateChecklist = checklist => setDraft(x => ({ ...x, checklist }))
-  const canSave = profile?.capabilities?.createTask === true || editing
+  const updateChecklist = (checklist) => setDraft((x) => ({ ...x, checklist }));
+  const canSave = profile?.capabilities?.createTask === true || editing;
 
-  return <div className="feature-page task-form-page">
-    <Link className="feature-back-link" to="/tasks"><ArrowLeft size={16} />Kembali ke Tugas Kami</Link>
-    <PageHeader title={editing ? 'Edit tugas' : 'Form tugas baru'} description="Kelola tugas tersimpan untuk tim." />
-    {error && <Panel><UnavailableState title={error} /></Panel>}
-    <div className="task-form-layout">
-      <Panel className="feature-panel task-form-panel" aria-label="Form informasi tugas">
-        <form onSubmit={submit}>
-          <SectionHeading title="Informasi tugas" description="Jelaskan pekerjaan dan konteks yang diperlukan oleh tim." />
-          <div className="task-form-fields">
-            <div className="task-form-hero-row">
-              <Input label="Judul tugas" name="title" value={draft.title} onChange={update} required />
-              <DatePicker label="Tenggat" id="task-due-date" value={draft.dueAt} onChange={value => setDraft(x => ({ ...x, dueAt: value }))} />
-            </div>
-            <Textarea label="Deskripsi" name="description" value={draft.description || ''} onChange={update} rows={6} />
-            <Select label="Proyek" name="projectId" value={draft.projectId} onChange={update} required>
-              <option value="">Pilih proyek</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.category ? ` · ${categoryLabel(p.category)}` : ''}</option>)}
-            </Select>
-            {!projects.length && <p className="muted">Belum ada proyek aktif yang dapat Anda akses. Buat proyek terlebih dahulu — jika Anda Leader atau Admin, gunakan pengelolaan proyek di Beranda.</p>}
-            {draft.projectId && projectScope.projectId === draft.projectId && !projectMembers.length && <p className="muted">Proyek ini belum memiliki anggota aktif. Tambahkan anggota proyek terlebih dahulu agar tugas dapat ditugaskan.</p>}
-            <AssigneePicker members={members} selected={draft.assigneeIds} onChange={ids => setDraft(x => ({ ...x, assigneeIds: ids, checklist: x.checklist.map(item => ids.includes(item.assigneeId) ? item : { ...item, assigneeId: '' }) }))} disabled={!members.length} />
-            <div className="task-form-row">
-              <Input label="Bobot" name="weight" type="number" min="0.01" step="any" value={draft.weight} onChange={update} required />
-              <Select label="Prioritas" name="priority" value={draft.priority} onChange={update}>
-                <option value="low">Rendah</option>
-                <option value="medium">Sedang</option>
-                <option value="high">Tinggi</option>
+  return (
+    <div className="feature-page task-form-page">
+      <Link className="feature-back-link" to="/tasks">
+        <ArrowLeft size={16} />
+        Kembali ke Tugas Kami
+      </Link>
+      <PageHeader
+        title={editing ? "Edit tugas" : "Form tugas baru"}
+        description="Kelola tugas tersimpan untuk tim."
+      />
+      {error && (
+        <Panel>
+          <UnavailableState title={error} />
+        </Panel>
+      )}
+      <div className="task-form-layout">
+        <Panel
+          className="feature-panel task-form-panel"
+          aria-label="Form informasi tugas"
+        >
+          <form onSubmit={submit}>
+            <SectionHeading
+              title="Informasi tugas"
+              description="Jelaskan pekerjaan dan konteks yang diperlukan oleh tim."
+            />
+            <div className="task-form-fields">
+              <div className="task-form-hero-row">
+                <Input
+                  label="Judul tugas"
+                  name="title"
+                  value={draft.title}
+                  onChange={update}
+                  required
+                />
+                <DatePicker
+                  label="Tenggat"
+                  id="task-due-date"
+                  value={draft.dueAt}
+                  onChange={(value) =>
+                    setDraft((x) => ({ ...x, dueAt: value }))
+                  }
+                />
+              </div>
+              <Textarea
+                label="Deskripsi"
+                name="description"
+                value={draft.description || ""}
+                onChange={update}
+                rows={6}
+              />
+              <Select
+                label="Proyek"
+                name="projectId"
+                value={draft.projectId}
+                onChange={update}
+                required
+              >
+                <option value="">Pilih proyek</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.category ? ` · ${categoryLabel(p.category)}` : ""}
+                  </option>
+                ))}
               </Select>
-              <Select label="Status" name="status" value={draft.status} onChange={update}>
-                <option value="todo">Todo</option>
-                <option value="in_progress">In progress</option>
-                <option value="in_review">Review</option>
-                <option value="done">Selesai</option>
-              </Select>
+              {!projects.length && (
+                <p className="muted">
+                  Belum ada proyek aktif yang dapat Anda akses. Buat proyek
+                  terlebih dahulu — jika Anda Leader atau Admin, gunakan
+                  pengelolaan proyek di Beranda.
+                </p>
+              )}
+              {draft.projectId &&
+                projectScope.projectId === draft.projectId &&
+                !projectMembers.length && (
+                  <p className="muted">
+                    Proyek ini belum memiliki anggota aktif. Tambahkan anggota
+                    proyek terlebih dahulu agar tugas dapat ditugaskan.
+                  </p>
+                )}
+              <AssigneePicker
+                members={members}
+                selected={draft.assigneeIds}
+                onChange={(ids) =>
+                  setDraft((x) => ({
+                    ...x,
+                    assigneeIds: ids,
+                    checklist: x.checklist.map((item) =>
+                      ids.includes(item.assigneeId)
+                        ? item
+                        : { ...item, assigneeId: "" },
+                    ),
+                  }))
+                }
+                disabled={!members.length}
+              />
+              <div className="task-form-row">
+                <Input
+                  label="Bobot"
+                  name="weight"
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={draft.weight}
+                  onChange={update}
+                  required
+                />
+                <Select
+                  label="Prioritas"
+                  name="priority"
+                  value={draft.priority}
+                  onChange={update}
+                >
+                  <option value="low">Rendah</option>
+                  <option value="medium">Sedang</option>
+                  <option value="high">Tinggi</option>
+                </Select>
+                <Select
+                  label="Status"
+                  name="status"
+                  value={draft.status}
+                  onChange={update}
+                >
+                  <option value="todo">Todo</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="in_review">Review</option>
+                  <option value="done">Selesai</option>
+                </Select>
+              </div>
+              <ChecklistDraft
+                items={draft.checklist}
+                members={members}
+                selectedIds={draft.assigneeIds}
+                onChange={updateChecklist}
+                disabled={false}
+              />
             </div>
-            <ChecklistDraft items={draft.checklist} members={members} selectedIds={draft.assigneeIds} onChange={updateChecklist} disabled={false} />
-          </div>
-          <div className="task-save-notice"><Info size={18} aria-hidden="true" /><p>Perubahan dikirim ke server.</p></div>
-          <div className="task-form-actions">
-            <Link className="button button--secondary" to="/tasks">Kembali</Link>
-            <Button type="submit" disabled={saving || !canSave}>{saving ? 'Menyimpan…' : <><Save size={16} aria-hidden="true" />Simpan tugas</>}</Button>
-          </div>
-        </form>
-      </Panel>
-      <ScrollReveal>
-        <details className="task-form-help">
-          <summary>Panduan</summary>
-          <p>Checklist menentukan progres tugas. Pilih proyek terlebih dahulu agar daftar penanggung jawab item checklist terisi dari anggota proyek yang aktif.</p>
-        </details>
-      </ScrollReveal>
+            <div className="task-save-notice">
+              <Info size={18} aria-hidden="true" />
+              <p>Perubahan dikirim ke server.</p>
+            </div>
+            <div className="task-form-actions">
+              <Link className="button button--secondary" to="/tasks">
+                Kembali
+              </Link>
+              <Button type="submit" disabled={saving || !canSave}>
+                {saving ? (
+                  "Menyimpan…"
+                ) : (
+                  <>
+                    <Save size={16} aria-hidden="true" />
+                    Simpan tugas
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Panel>
+        <ScrollReveal>
+          <details className="task-form-help">
+            <summary>Panduan</summary>
+            <p>
+              Checklist menentukan progres tugas. Pilih proyek terlebih dahulu
+              agar daftar penanggung jawab item checklist terisi dari anggota
+              proyek yang aktif.
+            </p>
+          </details>
+        </ScrollReveal>
+      </div>
     </div>
-  </div>
+  );
 }
