@@ -1,6 +1,6 @@
-import { toNodeHandler } from 'better-auth/node';
-import { auth } from './better-auth.config.js';
-import { getPool } from './db/pool.js';
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./better-auth.config.js";
+import { getPool } from "./db/pool.js";
 
 export { auth };
 export const betterAuthHandler = toNodeHandler(auth);
@@ -12,8 +12,8 @@ export const betterAuthHandler = toNodeHandler(auth);
 //   member  : read scoped work, toggle owned checklist, comment, report updates.
 export function capabilities(user) {
   const role = user?.role;
-  const leader = role === 'leader';
-  const admin = role === 'admin';
+  const leader = role === "leader";
+  const admin = role === "admin";
   const manager = leader || admin;
   return {
     readProgress: true,
@@ -35,8 +35,11 @@ export function capabilities(user) {
 export async function getAuthenticatedProfile(request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) return null;
-  const result = await getPool().query(`SELECT id, display_name, role, is_active, job_title, auth_subject
-    FROM profiles WHERE auth_subject=$1 AND is_active=true`, [session.user.id]);
+  const result = await getPool().query(
+    `SELECT id, display_name, role, is_active, job_title, auth_subject
+    FROM profiles WHERE auth_subject=$1 AND is_active=true`,
+    [session.user.id],
+  );
   const profile = result.rows[0];
   if (!profile?.is_active) return null;
   return { session, profile };
@@ -44,7 +47,26 @@ export async function getAuthenticatedProfile(request) {
 
 export async function me(request, response) {
   const authenticated = await getAuthenticatedProfile(request);
-  if (!authenticated) return response.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Authentication required.' } });
+  if (!authenticated)
+    return response
+      .status(401)
+      .json({
+        error: { code: "UNAUTHENTICATED", message: "Authentication required." },
+      });
   const { session, profile } = authenticated;
-  return response.status(200).json({ data: { user: { id: profile.id, authSubject: profile.auth_subject || session.user.id, email: session.user.email, displayName: profile.display_name, jobTitle: profile.job_title || null, role: profile.role }, capabilities: capabilities(profile) } });
+  return response
+    .status(200)
+    .json({
+      data: {
+        user: {
+          id: profile.id,
+          authSubject: profile.auth_subject || session.user.id,
+          email: session.user.email,
+          displayName: profile.display_name,
+          jobTitle: profile.job_title || null,
+          role: profile.role,
+        },
+        capabilities: capabilities(profile),
+      },
+    });
 }
