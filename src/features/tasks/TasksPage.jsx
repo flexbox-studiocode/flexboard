@@ -18,20 +18,20 @@ export default function TasksPage({ tasks, members }) {
   useEffect(() => {
     if (tasks !== undefined) return;
     let active = true;
-    listTasks()
-      .then((data) => {
-        if (!Array.isArray(data?.tasks))
-          throw new Error("Invalid tasks response");
-        if (active)
-          setRemote({
-            status: "success",
-            scope: "/tasks",
-            items: data.tasks.map(toTaskCard),
-          });
-      })
-      .catch(() => active && setRemote({ status: "error", scope: "/tasks" }));
+    const load = (showLoading = true) => {
+      if (showLoading) setRemote({ status: "loading", scope: "/tasks" });
+      listTasks()
+        .then((data) => {
+          if (!Array.isArray(data?.tasks)) throw new Error("Invalid tasks response");
+          if (active) setRemote({ status: "success", scope: "/tasks", items: data.tasks.map(toTaskCard) });
+        })
+        .catch(() => active && setRemote({ status: "error", scope: "/tasks" }));
+    };
+    load();
+    const timer = window.setInterval(() => load(false), 15000);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
   }, [tasks]);
   const taskState = useScopedCollection(tasks !== undefined ? tasks : remote);

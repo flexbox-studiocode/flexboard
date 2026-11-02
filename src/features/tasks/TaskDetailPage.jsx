@@ -105,7 +105,7 @@ export default function TaskDetailPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([
+    const load = () => Promise.all([
       getTask(id),
       listComments(id).catch(() => undefined),
       listUpdates(id).catch(() => undefined),
@@ -117,8 +117,11 @@ export default function TaskDetailPage() {
         setUpdates(u ? (listValue(u) || []).map(toUpdateItem) : undefined);
       })
       .catch(() => active && setError(true));
+    load();
+    const timer = window.setInterval(() => { if (active) load(); }, 15000);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
   }, [id]);
 

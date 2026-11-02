@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Plus, ShieldCheck } from "lucide-react";
 import {
@@ -61,10 +61,12 @@ export default function MembersPage({ members } = {}) {
     [scope],
   );
 
+  const initialLoad = useRef(false);
   useEffect(() => {
-    if (members !== undefined) return;
+    if (members !== undefined || initialLoad.current) return;
+    initialLoad.current = true;
     load(false);
-  }, [members, load]); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [members, load]);
 
   const query = (params.get("q") || "").toLowerCase();
   const filtered = useMemo(() => {

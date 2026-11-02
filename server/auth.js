@@ -48,3 +48,32 @@ export async function me(request, response) {
   const { session, profile } = authenticated;
   return response.status(200).json({ data: { user: { id: profile.id, authSubject: profile.auth_subject || session.user.id, email: session.user.email, displayName: profile.display_name, jobTitle: profile.job_title || null, role: profile.role }, capabilities: capabilities(profile) } });
 }
+
+// Self-service profile update. Users may only change their own displayName/jobTitle — never
+// role or active status (those are privileged and enforced by the members endpoints).
+export async function updateMe(request, response) {
+  const authenticated = await getAuthenticatedProfile(request);
+  if (!authenticated) return response.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Authentication required.' } });
+  const { profile } = authenticated;
+  const body = request.body && typeof request.body === 'object' ? request.body : {};
+  const sets = [];
+  const values = [];
+  if (body.displayName !== undefined) {
+    if (typeof body.displayName !== 'string' || body.displayName.trim().length < 2)
+      return response.status(400).json({ error: { code: 'VALIDATION', message: 'displayName must be at least 2 characters.' } });
+    values.push(body.displayName.trim());
+    sets.push(`display_name=$${values.length}`);
+  }
+  if (body.jobTitle !== undefined) {
+    if (body.jobTitle !== null && typeof body.jobTitle !== 'string')
+      return response.status(400).json({ error: { code: 'VALIDATION', message: 'jobTitle must be a string.' } });
+    values.push(body.jobTitle ? body.jobTitle.trim() || null : null);
+    sets.push(`job_title=$${values.length}`);
+  }
+  if (!sets.length) return response.status(400).json({ error: { code: 'VALIDATION', message: 'No updatable fields supplied.' } });
+  values.push(profile.id);
+  const result = await getPool().query(`UPDATE profiles SET ${sets.join(',')},updated_at=now() WHERE id=$${values.length} AND is_active=true RETURNING id,display_name,role,job_title`, values);
+  const updated = result.rows[0];
+  if (!updated) return response.status(404).json({ error: { code: 'NOT_FOUND', message: 'Profile not found.' } });
+  return response.status(200).json({ data: { user: { id: updated.id, displayName: updated.display_name, jobTitle: updated.job_title || null, role: updated.role }, capabilities: capabilities(updated) } });
+}

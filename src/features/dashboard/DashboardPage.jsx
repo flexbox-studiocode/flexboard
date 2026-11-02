@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -10,15 +11,34 @@ import {
 } from "../../components/ui/index.js";
 import { SectionHeading } from "../common/FeatureUI.jsx";
 import ProjectPicker from "../projects/ProjectPicker.jsx";
+import { listTasks } from "../tasks/taskApi.js";
+import { listMembers } from "../members/memberApi.js";
+import { toTaskCard } from "../common/apiAdapters.js";
 import "./dashboard.css";
 
-/**
- * Dashboard composition. Measurements are only shown once a server adapter is
- * wired up; until then every value stays explicitly unavailable (never 0%).
- */
 export default function DashboardPage() {
   const { profile } = useAuth();
   const canCreate = profile?.capabilities?.createTask === true;
+  const [tasks, setTasks] = useState(null);
+  const [members, setMembers] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([listTasks().catch(() => null), listMembers().catch(() => null)])
+      .then(([taskData, memberData]) => {
+        if (!active) return;
+        if (taskData?.tasks) setTasks(taskData.tasks.map(toTaskCard));
+        if (memberData?.members) setMembers(memberData.members);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const activeTasks = tasks?.filter(t => t.status !== 'archived') || [];
+  const avgProgress = activeTasks.length
+    ? Math.round(activeTasks.reduce((sum, t) => sum + (t.progress || 0), 0) / activeTasks.length)
+    : null;
+  const activeMembers = members?.filter(m => m.is_active !== false) || [];
+
   return (
     <div className="feature-page dashboard-page">
       <PageHeader
@@ -44,16 +64,31 @@ export default function DashboardPage() {
         <div className="dashboard-task-heading">
           <h2>Tugas bersama</h2>
           <span className="dashboard-task-status">
-            Status <strong>Belum tersedia</strong>
+            {tasks ? `${activeTasks.length} tugas aktif` : "Status belum tersedia"}
           </span>
         </div>
-        <UnavailableState
-          title="Tugas bersama belum dapat dimuat"
-          description="Buka Tugas Kami untuk memuat daftar tugas sesuai akses Anda."
-        />
+        {tasks ? (
+          activeTasks.length ? (
+            <ul className="dashboard-task-list">
+              {activeTasks.slice(0, 3).map(task => (
+                <li key={task.id}>
+                  <Link to={`/tasks/${task.id}`}>{task.title}</Link>
+                  <span className="dashboard-task-progress">{task.progress || 0}%</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="dashboard-empty">Tidak ada tugas aktif.</p>
+          )
+        ) : (
+          <UnavailableState
+            title="Tugas bersama belum dapat dimuat"
+            description="Buka Tugas Kami untuk memuat daftar tugas sesuai akses Anda."
+          />
+        )}
         <div className="dashboard-task-footer">
           <ProgressBar
-            value={null}
+            value={avgProgress}
             label="Akumulasi progres"
             unavailableLabel="Belum tersedia"
           />
@@ -68,10 +103,22 @@ export default function DashboardPage() {
           to="/members"
           linkLabel="Lihat anggota"
         />
-        <p className="dashboard-team-unavailable">
-          Daftar anggota belum tersedia. Nama, peran, dan jumlah anggota akan
-          mengikuti data server.
-        </p>
+        {members ? (
+          <div className="dashboard-team-summary">
+            <p><strong>{activeMembers.length}</strong> anggota aktif</p>
+            <ul className="dashboard-team-roles">
+              {['leader', 'admin', 'member'].map(role => {
+                const count = activeMembers.filter(m => m.role === role).length;
+                return count ? <li key={role}>{role}: {count}</li> : null;
+              })}
+            </ul>
+          </div>
+        ) : (
+          <p className="dashboard-team-unavailable">
+            Daftar anggota belum tersedia. Nama, peran, dan jumlah anggota akan
+            mengikuti data server.
+          </p>
+        )}
         <p className="dashboard-team-caption">
           Leader mengatur tugas. Anggota mengerjakan checklist sesuai izin.
         </p>

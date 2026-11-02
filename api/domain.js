@@ -410,7 +410,8 @@ export default async function handler(req, res) {
     const user = await requireUser(req, res);
     if (!user) return;
     const url = new URL(req.url, "http://localhost");
-    const parts = url.pathname
+    const originalPath = url.searchParams.get("__path");
+    const parts = (originalPath || url.pathname)
       .replace(/^\/api\/?/, "")
       .split("/")
       .filter(Boolean);
@@ -422,6 +423,26 @@ export default async function handler(req, res) {
       pool = getPool();
 
     if (resource === "auth" && target === "me") {
+      if (req.method === "PATCH") {
+        const displayName = b?.displayName;
+        const jobTitle = b?.jobTitle;
+        if (displayName != null && (typeof displayName !== "string" || displayName.trim().length < 2))
+          return json(res, 400, { code: "VALIDATION", message: "displayName must be at least 2 characters." });
+        if (jobTitle != null && typeof jobTitle !== "string")
+          return json(res, 400, { code: "VALIDATION", message: "jobTitle must be a string." });
+        const sets = [];
+        const vals = [];
+        if (displayName != null) { vals.push(displayName.trim()); sets.push(`display_name=$${vals.length}`); }
+        if (jobTitle != null) { vals.push(jobTitle.trim() || null); sets.push(`job_title=$${vals.length}`); }
+        if (!sets.length) return json(res, 400, { code: "VALIDATION", message: "No updatable fields supplied." });
+        vals.push(user.id);
+        const r = await pool.query(`UPDATE profiles SET ${sets.join(",")},updated_at=now() WHERE id=$${vals.length} RETURNING id,display_name,job_title,role`, vals);
+        const updated = r.rows[0];
+        return json(res, 200, {
+          user: { id: updated.id, displayName: updated.display_name, jobTitle: updated.job_title || null, role: updated.role },
+          capabilities: capabilities(user),
+        });
+      }
       return json(res, 200, {
         user: {
           id: user.id,
