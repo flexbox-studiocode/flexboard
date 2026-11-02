@@ -50,6 +50,7 @@ Atau deploy ke Vercel dan panggil URL `/api/health`. Vite dev server tidak menja
 - `npm run test:watch` — mode pengembangan tes komponen
 - `npm run test:browser` — Playwright Chromium; jalankan `npx playwright install chromium` terlebih dahulu
 - `npm run test:node` — 3 tes konfigurasi routing deployment, terpisah dari Vitest/Playwright; bukan pengujian runtime Vercel
+- `npm run auth:provision:production` — provisioning satu akun production di Neon `flexboard_prod` (operator berwenang saja)
 
 Tes browser menjalankan Vite lokal otomatis atau memakai server yang sudah aktif pada `127.0.0.1:5173`. Tidak membuat akun/sesi/tugas palsu dan tidak menguji backend yang belum tersedia.
 
@@ -73,6 +74,16 @@ Salin `.env.example` menjadi `.env` untuk konfigurasi lokal. `DATABASE_URL` dan 
 ## PostgreSQL Tahap 2
 
 Setup, migration, status, dan seed development: [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md). Migration memakai `pg`, transaksi per file, dan advisory lock. Belum ada API domain, autentikasi, atau integrasi frontend.
+
+## Provisioning akun production (Neon)
+
+Akun production dibuat manual dari terminal lokal, tidak lewat endpoint HTTP:
+
+```bash
+npm run auth:provision:production
+```
+
+Hanya berjalan terhadap Neon `flexboard_prod` (memakai `.env.neon`, yang tidak di-commit), satu akun per eksekusi, role `leader`/`member`. Detail, pengaman, dan langkah verifikasi login: [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md#provisioning-production-neon-postgresql). Provisioning hanya untuk operator berwenang.
 
 ## Status Tahap 1
 PostgreSQL, autentikasi, sesi, role, migration, API domain, dan data produksi belum tersedia. Halaman workspace merupakan pratinjau publik tanpa data privat dan dengan pengungkapan status integrasi. Aksi penyimpanan dan login nonaktif; input form baru dan rancangan checklist hanya state lokal yang hilang saat keluar halaman. Profil pratinjau tidak menampilkan identitas atau role sebelum sesi tersedia. Jangan memasukkan data sensitif pada pratinjau. Provider PostgreSQL, strategi autentikasi, kontrak API, serta aturan bisnis terbuka harus disepakati sebelum integrasi.
