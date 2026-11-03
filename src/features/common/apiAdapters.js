@@ -48,7 +48,11 @@ export function toMemberCard(profile = {}) {
     is_active:
       typeof profile.is_active === "boolean" ? profile.is_active : undefined,
     activeTaskCount: numberOrNull(profile.active_task_count),
-    progress: numberOrNull(profile.progress),
+    checklistCount: numberOrNull(profile.checklist_count),
+    completedChecklist: numberOrNull(profile.completed_checklist),
+    completionPercent: numberOrNull(profile.completion_percent ?? profile.progress),
+    progress: numberOrNull(profile.completion_percent ?? profile.progress),
+    progressStatus: profile.progress_status || null,
     permissions: profile.permissions || null,
   };
 }
@@ -78,19 +82,19 @@ export function toTaskCard(task = {}) {
   };
 }
 
-/** API progress row → MemberProgressList entry props. */
+/** API progress row → one member summary. */
 export function toProgressEntry(row = {}) {
   return {
-    id: row.id,
-    name: row.title || row.name || null,
+    id: row.member_id || row.id,
+    name: row.member_name || row.display_name || row.name || null,
     roleLabel: truthyLabel(row.role_label) || truthyLabel(row.role) || null,
-    projectLabel:
-      truthyLabel(row.project_name) || truthyLabel(row.project?.name),
-    detailPath: row.id ? `/tasks/${row.id}` : null,
+    activeTaskCount: numberOrNull(row.active_task_count),
+    checklistCount: numberOrNull(row.checklist_count),
+    completedChecklist: numberOrNull(row.completed_checklist),
     progress: numberOrNull(row.completion_percent),
-    averageProgress: numberOrNull(
-      row.average_progress ?? row.completion_percent,
-    ),
+    averageProgress: numberOrNull(row.completion_percent),
+    progressStatus: row.progress_status || null,
+    detailPath: null,
   };
 }
 

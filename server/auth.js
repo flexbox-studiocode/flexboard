@@ -24,7 +24,8 @@ export function capabilities(user) {
     editTask: manager,
     archiveTask: manager,
     manageAssignments: manager,
-    manageProjects: manager,
+    // Project create/update/members is Leader-only by product policy (see server/authorization.js).
+    manageProjects: leader,
     manageMembers: manager,
     changeRoles: leader,
     manageAdmins: leader,

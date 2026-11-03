@@ -17,7 +17,7 @@ export async function requireLeader(request, response) {
   if (user.role !== 'leader') { response.status(403).json({ error: { code: 'FORBIDDEN', message: 'Leader role required.' } }); return null; }
   return user;
 }
-/** Leader or admin: both may manage projects and tasks. */
+/** Leader or admin may manage operational work; projects are Leader-only. */
 export async function requireManager(request, response) {
   const user = await requireUser(request, response);
   if (!user) return null;

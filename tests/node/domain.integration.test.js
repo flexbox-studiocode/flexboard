@@ -109,11 +109,17 @@ integration('domain API end-to-end authorization, transactions, persistence, pro
     assert.equal((await call(handler, 'GET', `tasks/${task.id}/updates`, leader.cookie)).body.data.updates.length, 1);
 
     const progress = (await call(handler, 'GET', 'progress/team', member.cookie)).body.data.progress;
-    const calculated = progress.find(row => row.id === task.id);
-    const empty = progress.find(row => row.title === 'No Checklist');
-    assert.equal(calculated.completion_percent, '50.00');
-    assert.equal(empty.completion_percent, null);
-    assert.equal(empty.progress_unavailable_reason, 'NO_ACTIVE_CHECKLIST');
+    // Team progress returns one row per active member using the shared checklist definition.
+    // At this point the member has just completed their own checklist item (1 of 2 completed),
+    // so their row reports 50% progress. A member with no assigned checklist would report
+    // NO_ASSIGNED_CHECKLIST instead.
+    const memberRow = progress.find(row => row.member_id === member.id);
+    assert.equal(memberRow.completion_percent, '50.00');
+    assert.equal(memberRow.progress_status, 'IN_PROGRESS');
+    assert.equal(memberRow.checklist_count, 2);
+    assert.equal(memberRow.completed_checklist, 1);
+    // No row is keyed by task id anymore; the endpoint summarises per member, not per task.
+    assert.equal(progress.some(row => row.id === task.id || row.task_id), false);
 
     // Contract: PATCH checklist syncs transactionally, preserving ids and completion state, updating kept rows,
     // inserting new ones, and soft-deleting omitted items instead of hard deleting them.

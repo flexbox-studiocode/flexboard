@@ -105,7 +105,7 @@ export default function TaskDetailPage() {
 
   useEffect(() => {
     let active = true;
-    const load = () => Promise.all([
+    const load = (showError = false) => Promise.all([
       getTask(id),
       listComments(id).catch(() => undefined),
       listUpdates(id).catch(() => undefined),
@@ -113,15 +113,21 @@ export default function TaskDetailPage() {
       .then(([t, c, u]) => {
         if (!active) return;
         applyTask(t);
+        setError(false);
         setComments(c ? (listValue(c) || []).map(toCommentItem) : undefined);
         setUpdates(u ? (listValue(u) || []).map(toUpdateItem) : undefined);
       })
-      .catch(() => active && setError(true));
-    load();
-    const timer = window.setInterval(() => { if (active) load(); }, 15000);
+      .catch(() => active && showError && setError(true));
+    load(true);
+    const timer = window.setInterval(() => { if (document.visibilityState !== "hidden") load(false); }, 5000);
+    const refresh = () => { if (document.visibilityState === "visible") load(false); };
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       active = false;
       window.clearInterval(timer);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [id]);
 

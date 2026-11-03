@@ -30,7 +30,8 @@ test('development config delegates to Vite without SPA catch-all routing', () =>
   assert.equal(devConfig.devCommand, 'vite --port $PORT')
   assert.equal(devConfig.routes, undefined)
   assert.ok(Array.isArray(devConfig.rewrites))
-   assert.equal(devConfig.rewrites[0].destination, '/api/auth?__auth_path=/api/auth/:path*')
+   assert.equal(devConfig.rewrites[0].destination, '/api/domain?__path=/api/auth/me')
+   assert.equal(devConfig.rewrites[1].destination, '/api/auth?__auth_path=/api/auth/:path*')
   for (const path of ['/src/main.jsx', '/@vite/client', '/@id/react', '/@fs/project/file.js']) {
     assert.equal(path.includes('index.html'), false)
   }

@@ -68,6 +68,14 @@ export default function MembersPage({ members } = {}) {
     load(false);
   }, [members, load]);
 
+  useEffect(() => {
+    if (members !== undefined) return;
+    const timer = window.setInterval(() => { if (document.visibilityState !== "hidden") load(false); }, 5000);
+    const refresh = () => { if (document.visibilityState === "visible") load(false); };
+    window.addEventListener("online", refresh); document.addEventListener("visibilitychange", refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener("online", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [members, load]);
+
   const query = (params.get("q") || "").toLowerCase();
   const filtered = useMemo(() => {
     const source = members !== undefined ? members.items || [] : rawMembers;
@@ -202,10 +210,12 @@ export default function MembersPage({ members } = {}) {
                       : undefined)
                   }
                   is_active={member.is_active}
-                  activeTaskCount={
-                    member.activeTaskCount ?? member.active_task_count
-                  }
-                  progress={member.progress}
+                  activeTaskCount={member.activeTaskCount ?? member.active_task_count}
+                  checklistCount={member.checklist_count ?? member.checklistCount}
+                  completedChecklist={member.completed_checklist ?? member.completedChecklist}
+                  completionPercent={member.completion_percent ?? member.completionPercent}
+                  progress={member.completion_percent ?? member.progress}
+                  progressStatus={member.progress_status ?? member.progressStatus}
                   permissions={member.permissions}
                   onEdit={
                     manageActions

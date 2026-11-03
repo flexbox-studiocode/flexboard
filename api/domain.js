@@ -10,6 +10,7 @@ import {
   rankOf,
 } from "../server/authorization.js";
 import { capabilities } from "../server/auth.js";
+import { memberProgressSql, memberActiveTasksSql, progressStatusFrom } from "../server/progress.js";
 import {
   provisionInTransaction,
   revokeSessions,
@@ -256,11 +257,14 @@ async function listMembers(pool, { includeInactive = true } = {}) {
   const where = includeInactive ? "" : "WHERE p.is_active=true";
   const r = await pool.query(`SELECT ${memberShape},
       (auth_subject IS NOT NULL) AS has_login,
-      (SELECT count(DISTINCT ta.task_id) FROM task_assignees ta JOIN tasks t ON t.id=ta.task_id WHERE ta.user_id=p.id AND t.archived_at IS NULL)::int AS active_task_count,
-      (SELECT CASE WHEN count(DISTINCT ta.task_id)=0 THEN NULL ELSE round((count(DISTINCT ta.task_id) FILTER (WHERE t.status='done')::numeric / count(DISTINCT ta.task_id))*100,2) END FROM task_assignees ta JOIN tasks t ON t.id=ta.task_id WHERE ta.user_id=p.id AND t.archived_at IS NULL) AS progress,
+      ${memberActiveTasksSql("p")},
+      ${memberProgressSql("p")},
       (SELECT count(*) FROM project_members pm WHERE pm.user_id=p.id)::int AS project_count
     FROM profiles p ${where} ORDER BY (p.role='leader') DESC,(p.role='admin') DESC,p.is_active DESC,p.display_name`);
-  return r.rows;
+  return r.rows.map((row) => ({
+    ...row,
+    progress_status: progressStatusFrom(row.checklist_count, row.completed_checklist),
+  }));
 }
 
 async function createMember(pool, actor, b) {
@@ -519,7 +523,7 @@ export default async function handler(req, res) {
     if (resource === "projects") {
       if (req.method === "GET" && !target) {
         const r = await pool.query(
-          `SELECT p.*,p.category,p.created_by=$1 AS is_owner,(SELECT count(*) FROM project_members pm WHERE pm.project_id=p.id)::int AS member_count FROM projects p LEFT JOIN project_members m ON m.project_id=p.id AND m.user_id=$1 WHERE p.archived_at IS NULL AND (p.created_by=$1 OR m.user_id IS NOT NULL OR $2=true) ORDER BY p.updated_at DESC`,
+          `SELECT p.*,p.category,p.created_by=$1 AS is_owner,(SELECT count(*) FROM project_members pm WHERE pm.project_id=p.id)::int AS member_count FROM projects p LEFT JOIN project_members m ON m.project_id=p.id AND m.user_id=$1 WHERE p.archived_at IS NULL AND (p.created_by=$1 OR m.user_id IS NOT NULL OR $2::boolean=true) ORDER BY p.updated_at DESC`,
           [user.id, isManager(user)],
         );
         return json(res, 200, { projects: r.rows });
@@ -562,10 +566,10 @@ export default async function handler(req, res) {
         return json(res, 200, { project: r.rows[0], members });
       }
       if (req.method === "PUT" && target && nested === "members") {
-        if (!isManager(user))
+        if (!isLeader(user))
           return json(res, 403, {
             code: "FORBIDDEN",
-            message: "Manager role required.",
+            message: "Leader role required.",
           });
         const projectId = uuid(target, "projectId"),
           memberIds = b.memberIds;
@@ -617,10 +621,10 @@ export default async function handler(req, res) {
         (req.method === "POST" && !target) ||
         (req.method === "PATCH" && target && !nested)
       ) {
-        if (!isManager(user))
+        if (!isLeader(user))
           return json(res, 403, {
             code: "FORBIDDEN",
-            message: "Manager role required.",
+            message: "Leader role required.",
           });
         const editing = req.method === "PATCH";
         const projectId = editing ? uuid(target, "projectId") : null;
@@ -731,8 +735,19 @@ export default async function handler(req, res) {
           message: "Method not allowed.",
         });
       const r = await pool.query(
-        `SELECT a.*,p.display_name AS actor_name FROM activity_logs a JOIN profiles p ON p.id=a.actor_id LEFT JOIN project_members pm ON pm.project_id=a.project_id AND pm.user_id=$1 WHERE a.project_id IS NULL OR pm.user_id IS NOT NULL OR EXISTS (SELECT 1 FROM projects x WHERE x.id=a.project_id AND x.created_by=$1) ORDER BY a.created_at DESC LIMIT 100`,
-        [user.id],
+        `SELECT a.id,a.actor_id,p.display_name AS actor_name,a.project_id,pr.name AS project_name,a.task_id,t.title AS task_title,a.action,a.metadata,a.created_at
+         FROM activity_logs a
+         JOIN profiles p ON p.id=a.actor_id
+         LEFT JOIN projects pr ON pr.id=a.project_id
+         LEFT JOIN tasks t ON t.id=a.task_id
+         LEFT JOIN project_members pm ON pm.project_id=a.project_id AND pm.user_id=$1
+         WHERE a.project_id IS NULL
+            OR $2::boolean=true
+            OR pr.created_by=$1
+            OR pm.user_id IS NOT NULL
+            OR EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id=a.task_id AND ta.user_id=$1)
+         ORDER BY a.created_at DESC LIMIT 100`,
+        [user.id, isLeader(user)],
       );
       return json(res, 200, { activity: r.rows });
     }
@@ -744,10 +759,18 @@ export default async function handler(req, res) {
           message: "Method not allowed.",
         });
       const r = await pool.query(
-        `SELECT t.id,t.title,t.status,t.weight,t.project_id,COALESCE(ci.total,0)::int AS checklist_count,COALESCE(ci.completed,0)::int AS completed_checklist,CASE WHEN COALESCE(ci.total,0)=0 THEN NULL ELSE ROUND((ci.completed::numeric/ci.total)*100,2) END AS completion_percent,CASE WHEN COALESCE(ci.total,0)=0 THEN 'NO_ACTIVE_CHECKLIST' ELSE NULL END AS progress_unavailable_reason FROM tasks t JOIN projects p ON p.id=t.project_id LEFT JOIN project_members pm ON pm.project_id=t.project_id AND pm.user_id=$1 LEFT JOIN (SELECT task_id,count(*) total,count(*) FILTER (WHERE is_completed) completed FROM checklist_items WHERE archived_at IS NULL GROUP BY task_id) ci ON ci.task_id=t.id WHERE t.archived_at IS NULL AND (p.created_by=$1 OR pm.user_id IS NOT NULL OR $2=true) GROUP BY t.id,p.created_by,ci.total,ci.completed`,
-        [user.id, isManager(user)],
+        `SELECT p.id AS member_id,p.display_name AS member_name,p.role,p.is_active,
+          ${memberActiveTasksSql("p")},${memberProgressSql("p")}
+         FROM profiles p
+         WHERE p.is_active=true
+           AND ($2::boolean=true OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.user_id=p.id))
+         ORDER BY (p.role='leader') DESC,(p.role='admin') DESC,p.display_name`,
+        [user.id, isLeader(user)],
       );
-      return json(res, 200, { progress: r.rows });
+      return json(res, 200, { progress: r.rows.map((row) => ({
+        ...row,
+        progress_status: progressStatusFrom(row.checklist_count, row.completed_checklist),
+      })) });
     }
 
     if (resource !== "tasks")
@@ -1234,9 +1257,30 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
+      const q = (url.searchParams.get("q") || "").trim();
+      const projectFilter = url.searchParams.get("project");
+      const memberFilter = url.searchParams.get("member");
+      const statusFilter = url.searchParams.get("status");
+      const priorityFilter = url.searchParams.get("priority");
+      const from = url.searchParams.get("from");
+      const to = url.searchParams.get("to");
+      const values = [user.id, isLeader(user), q || null, projectFilter || null, memberFilter || null, statusFilter || null, priorityFilter || null, from || null, to || null];
       const r = await pool.query(
-        `SELECT t.*,p.name AS project_name,${CHECKLIST_PROGRESS},COALESCE((SELECT json_agg(jsonb_build_object('id',ap.id,'name',ap.display_name,'role',ap.role) ORDER BY ap.display_name) FROM task_assignees ta JOIN profiles ap ON ap.id=ta.user_id WHERE ta.task_id=t.id),'[]') assignees FROM tasks t JOIN projects p ON p.id=t.project_id LEFT JOIN project_members pm ON pm.project_id=t.project_id AND pm.user_id=$1 LEFT JOIN task_assignees at ON at.task_id=t.id AND at.user_id=$1 WHERE t.archived_at IS NULL AND (p.created_by=$1 OR pm.user_id IS NOT NULL OR at.user_id IS NOT NULL OR $2=true) ORDER BY t.created_at DESC`,
-        [user.id, isManager(user)],
+        `SELECT t.*,p.name AS project_name,${CHECKLIST_PROGRESS},COALESCE((SELECT json_agg(jsonb_build_object('id',ap.id,'name',ap.display_name,'role',ap.role) ORDER BY ap.display_name) FROM task_assignees ta JOIN profiles ap ON ap.id=ta.user_id WHERE ta.task_id=t.id),'[]') assignees
+         FROM tasks t JOIN projects p ON p.id=t.project_id
+         LEFT JOIN project_members pm ON pm.project_id=t.project_id AND pm.user_id=$1
+         LEFT JOIN task_assignees at ON at.task_id=t.id AND at.user_id=$1
+         WHERE t.archived_at IS NULL
+           AND (p.created_by=$1 OR pm.user_id IS NOT NULL OR at.user_id IS NOT NULL OR $2::boolean=true)
+           AND ($3::text IS NULL OR t.title ILIKE '%'||$3||'%' OR COALESCE(t.description,'') ILIKE '%'||$3||'%' OR p.name ILIKE '%'||$3||'%' OR EXISTS (SELECT 1 FROM task_assignees sq JOIN profiles sp ON sp.id=sq.user_id WHERE sq.task_id=t.id AND sp.display_name ILIKE '%'||$3||'%'))
+           AND ($4::uuid IS NULL OR t.project_id=$4::uuid)
+           AND ($5::uuid IS NULL OR EXISTS (SELECT 1 FROM task_assignees sm WHERE sm.task_id=t.id AND sm.user_id=$5::uuid))
+           AND ($6::text IS NULL OR t.status=$6)
+           AND ($7::text IS NULL OR t.priority=$7)
+           AND ($8::date IS NULL OR t.due_at >= $8::date)
+           AND ($9::date IS NULL OR t.due_at <= $9::date)
+         GROUP BY t.id,p.name ORDER BY t.created_at DESC`,
+        values,
       );
       return json(res, 200, { tasks: r.rows });
     }
