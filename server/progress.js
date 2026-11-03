@@ -21,9 +21,9 @@ export function progressStatusFrom(count, completed) {
 
 /** SQL fragments use the supplied PostgreSQL placeholder for project scope. */
 export function memberProgressSql(memberAlias = "p", projectPlaceholder = "NULL") {
-  const base = `ci.assignee_id = ${memberAlias}.id AND ci.archived_at IS NULL AND ci.is_completed IS NOT NULL AND t.archived_at IS NULL AND t.status <> 'archived' AND (${projectPlaceholder}::uuid IS NULL OR t.project_id = ${projectPlaceholder}::uuid)`;
-  const total = `SELECT count(*) FROM checklist_items ci JOIN tasks t ON t.id=ci.task_id WHERE ${base.replace(" AND ci.is_completed IS NOT NULL", "")}`;
-  const completed = `SELECT count(*) FROM checklist_items ci JOIN tasks t ON t.id=ci.task_id WHERE ${base} AND ci.is_completed`;
+  const scope = `ci.assignee_id = ${memberAlias}.id AND ci.archived_at IS NULL AND t.archived_at IS NULL AND t.status <> 'archived' AND (${projectPlaceholder}::uuid IS NULL OR t.project_id = ${projectPlaceholder}::uuid)`;
+  const total = `SELECT count(*) FROM checklist_items ci JOIN tasks t ON t.id = ci.task_id WHERE ${scope}`;
+  const completed = `SELECT count(*) FROM checklist_items ci JOIN tasks t ON t.id = ci.task_id WHERE ${scope} AND ci.is_completed = true`;
   return `
     (${total})::int AS checklist_count,
     (${completed})::int AS completed_checklist,

@@ -410,6 +410,7 @@ async function setActive(pool, actor, targetId, active) {
 }
 
 export default async function handler(req, res) {
+  const requestId = req.headers?.["x-request-id"] || req.headers?.get?.("x-request-id") || randomUUID();
   try {
     const user = await requireUser(req, res);
     if (!user) return;
@@ -759,13 +760,45 @@ export default async function handler(req, res) {
           message: "Method not allowed.",
         });
       const r = await pool.query(
-        `SELECT p.id AS member_id,p.display_name AS member_name,p.role,p.is_active,
-          ${memberActiveTasksSql("p")},${memberProgressSql("p")}
-         FROM profiles p
-         WHERE p.is_active=true
-           AND ($2::boolean=true OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.user_id=p.id))
-         ORDER BY (p.role='leader') DESC,(p.role='admin') DESC,p.display_name`,
-        [user.id, isLeader(user)],
+        `WITH active_members AS (
+           SELECT p.id, p.display_name, p.role
+           FROM profiles p
+           WHERE p.is_active = true
+             AND ($1::boolean = true OR EXISTS (
+               SELECT 1 FROM project_members pm WHERE pm.user_id = p.id
+             ))
+         ), active_tasks AS (
+           SELECT ta.user_id, COUNT(DISTINCT ta.task_id)::int AS active_task_count
+           FROM task_assignees ta
+           JOIN tasks t ON t.id = ta.task_id
+           WHERE t.archived_at IS NULL AND t.status <> 'archived'
+           GROUP BY ta.user_id
+         ), assigned_checklists AS (
+           SELECT ci.assignee_id,
+                  COUNT(*)::int AS checklist_count,
+                  COUNT(*) FILTER (WHERE ci.is_completed = true)::int AS completed_checklist
+           FROM checklist_items ci
+           JOIN tasks t ON t.id = ci.task_id
+           WHERE ci.assignee_id IS NOT NULL
+             AND ci.archived_at IS NULL
+             AND t.archived_at IS NULL
+             AND t.status <> 'archived'
+           GROUP BY ci.assignee_id
+         )
+         SELECT am.id AS member_id,
+                am.display_name AS member_name,
+                am.role,
+                COALESCE(at.active_task_count, 0)::int AS active_task_count,
+                COALESCE(ac.checklist_count, 0)::int AS checklist_count,
+                COALESCE(ac.completed_checklist, 0)::int AS completed_checklist,
+                CASE WHEN COALESCE(ac.checklist_count, 0) = 0 THEN NULL
+                     ELSE ROUND((ac.completed_checklist::numeric / ac.checklist_count::numeric) * 100, 2)
+                END AS completion_percent
+         FROM active_members am
+         LEFT JOIN active_tasks at ON at.user_id = am.id
+         LEFT JOIN assigned_checklists ac ON ac.assignee_id = am.id
+         ORDER BY (am.role = 'leader') DESC, (am.role = 'admin') DESC, am.display_name`,
+        [isLeader(user)],
       );
       return json(res, 200, { progress: r.rows.map((row) => ({
         ...row,
@@ -1396,6 +1429,15 @@ export default async function handler(req, res) {
     });
   } catch (e) {
     const status = e.status || 500;
+    if (status >= 500) {
+      console.error("[domain] request failed", {
+        requestId,
+        method: req.method,
+        path: new URL(req.url || "/", "http://localhost").pathname,
+        code: e.code || "INTERNAL_ERROR",
+        message: e.message || "unknown",
+      });
+    }
     return json(res, status, {
       code: e.code || (e.status ? "VALIDATION_ERROR" : "INTERNAL_ERROR"),
       message: e.status ? e.message : "Request failed.",
