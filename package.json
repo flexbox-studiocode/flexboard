@@ -18,6 +18,7 @@
     "db:seed": "node --env-file=.env scripts/db.mjs seed",
     "auth:provision": "node --env-file=.env scripts/provision-auth-user.mjs",
     "auth:reset-password": "node --env-file=.env scripts/reset-auth-password.mjs",
+    "auth:reset:production": "node --env-file=.env.neon scripts/reset-production-user-password.mjs",
     "auth:test-http": "node scripts/test-auth-http.mjs",
     "auth:diagnose-runtime": "node --env-file=.env scripts/diagnose-auth-runtime.mjs",
     "auth:provision:production": "node --env-file=.env.neon scripts/provision-production-users.mjs"
